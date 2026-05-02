@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>نظام توزيع المسؤوليات الذكي</title>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0fdf4;color:#1e293b;min-height:100vh}
+header{background:linear-gradient(135deg,#0f766e,#134e4a);color:#fff;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.header-left{display:flex;align-items:center;gap:.75rem}
+header h1{font-size:1.3rem;font-weight:700}
+nav{background:#134e4a;display:flex;overflow-x:auto;border-bottom:2px solid #0f766e}
+nav button{background:none;border:none;color:#99f6e4;padding:.8rem 1.6rem;cursor:pointer;font-size:.95rem;white-space:nowrap;transition:all .2s;font-family:Arial,sans-serif;border-bottom:2px solid transparent;margin-bottom:-2px}
+nav button:hover{background:rgba(255,255,255,.08);color:#fff}
+nav button.active{background:#0f766e;color:#fff;border-bottom-color:#5eead4}
+main{max-width:1150px;margin:1.5rem auto;padding:0 1rem}
+.card{background:#fff;border-radius:14px;padding:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:1.5rem;border:1px solid #e2e8f0}
+.card h2{font-size:1.05rem;color:#0f766e;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.form-row{display:flex;flex-wrap:wrap;gap:.7rem;margin-bottom:.7rem}
+.form-row input,.form-row select,.form-row textarea{flex:1;min-width:150px;padding:.6rem .8rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:.9rem;font-family:Arial,sans-serif;transition:border .2s;background:#fafafa}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:#0f766e;background:#fff}
+textarea{min-height:72px;resize:vertical}
+.btn{padding:.55rem 1.2rem;border:none;border-radius:9px;cursor:pointer;font-size:.88rem;font-weight:700;transition:all .2s;font-family:Arial,sans-serif;display:inline-flex;align-items:center;gap:.4rem}
+.btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.15)}
+.btn:active{transform:translateY(0)}
+.btn-primary{background:#0f766e;color:#fff}
+.btn-secondary{background:#6366f1;color:#fff}
+.btn-danger{background:#ef4444;color:#fff}
+.btn-outline{background:#fff;color:#0f766e;border:1.5px solid #0f766e}
+.btn-sm{padding:.3rem .7rem;font-size:.8rem}
+.actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
+table{width:100%;border-collapse:collapse;font-size:.87rem}
+th{background:#0f766e;color:#fff;padding:.65rem .85rem;text-align:right;font-weight:600}
+td{padding:.65rem .85rem;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fffe}
+.badge{display:inline-block;padding:.2rem .65rem;border-radius:99px;font-size:.75rem;font-weight:700}
+.badge-low{background:#dcfce7;color:#15803d}
+.badge-medium{background:#dbeafe;color:#1d4ed8}
+.badge-high{background:#fef3c7;color:#b45309}
+.badge-critical{background:#fee2e2;color:#b91c1c}
+.badge-ok{background:#d1fae5;color:#065f46}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:.35rem;flex-shrink:0}
+.ai-box{background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #a7f3d0;border-radius:10px;padding:.9rem 1.1rem;margin-top:.75rem;font-size:.85rem;line-height:1.7}
+.ai-box h4{color:#0f766e;margin-bottom:.4rem;font-size:.9rem}
+.tag{display:inline-block;background:#e0f2fe;color:#0369a1;border-radius:6px;padding:.15rem .5rem;font-size:.75rem;margin:.1rem}
+.dist-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:11px;padding:1rem 1.1rem;margin-bottom:.8rem}
+.dist-card h4{color:#1e293b;margin-bottom:.6rem;font-size:.95rem}
+.ranking-row{display:flex;align-items:center;gap:.6rem;padding:.38rem 0;border-bottom:1px dashed #e9eef5;font-size:.85rem}
+.ranking-row:last-child{border-bottom:none}
+.rank-badge{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.75rem;flex-shrink:0}
+.rank-1{background:#fbbf24;color:#78350f}
+.rank-2{background:#94a3b8;color:#1e293b}
+.rank-3{background:#cd7c2f;color:#fff}
+.load-wrap{background:#e2e8f0;border-radius:99px;height:9px;flex:1;overflow:hidden}
+.load-bar{height:9px;border-radius:99px;transition:width .6s ease}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.alert{padding:.75rem 1rem;border-radius:9px;margin-bottom:1rem;font-size:.88rem;display:flex;align-items:center;gap:.5rem}
+.alert-success{background:#dcfce7;color:#15803d;border:1px solid #86efac}
+.alert-error{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5}
+.alert-info{background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd}
+.hidden{display:none!important}
+.page{display:none}
+.page.active{display:block}
+.key-banner{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #f59e0b;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.key-banner p{flex:1;color:#92400e;font-size:.9rem}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1rem}
+.stat-card{background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;border-radius:12px;padding:1rem;text-align:center}
+.stat-card .num{font-size:2rem;font-weight:800;line-height:1}
+.stat-card .lbl{font-size:.8rem;opacity:.85;margin-top:.25rem}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
+.modal{background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal h3{color:#0f766e;margin-bottom:1rem;font-size:1.1rem}
+.empty-state{text-align:center;padding:2.5rem;color:#94a3b8}
+.empty-state svg{margin-bottom:.75rem;opacity:.4}
+.overload-warn{background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:.65rem 1rem;font-size:.85rem;color:#9a3412;margin-bottom:.5rem}
+@media(max-width:600px){header h1{font-size:1.1rem}.btn{padding:.45rem .9rem;font-size:.82rem}th,td{padding:.5rem .6rem}}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.8">
+      <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+      <path d="M17 11c2.2.4 4 2.2 4 5"/><path d="M7 11c-2.2.4-4 2.2-4 5"/>
+    </svg>
+    <div>
+      <h1>نظام توزيع المسؤوليات الذكي</h1>
+      <div style="font-size:.75rem;opacity:.7">Smart Responsibility Distribution</div>
+    </div>
+  </div>
+  <button class="btn btn-outline" style="border-color:#5eead4;color:#5eead4;font-size:.82rem" onclick="openKeyModal()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    مفتاح API
+  </button>
+</header>
+
+<nav>
+  <button class="active" onclick="showPage('employees',this)">👥 أعضاء الفريق</button>
+  <button onclick="showPage('responsibilities',this)">📋 المسؤوليات</button>
+  <button onclick="showPage('distribute',this)">🤖 التوزيع الذكي</button>
+  <button onclick="showPage('import',this)">📊 استيراد / تصدير</button>
+</nav>
+
+<!-- API Key Modal -->
+<div id="key-modal" class="modal-bg hidden">
+  <div class="modal">
+    <h3>🔑 مفتاح Anthropic API</h3>
+    <p style="font-size:.85rem;color:#64748b;margin-bottom:1rem">يُخزَّن المفتاح في المتصفح فقط ولا يُرسَل لأي خادم خارجي.</p>
+    <div class="form-row" style="margin-bottom:1rem">
+      <input id="api-key-input" type="password" placeholder="sk-ant-..." style="flex:1"/>
+    </div>
+    <div style="display:flex;gap:.5rem">
+      <button class="btn btn-primary" onclick="saveKey()">حفظ</button>
+      <button class="btn btn-outline" onclick="closeKeyModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<main>
+
+<!-- ═══════════════ EMPLOYEES ═══════════════ -->
+<div id="page-employees" class="page active">
+  <div id="key-warn-emp" class="key-banner hidden">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <p>لم يتم ضبط مفتاح API بعد — ميزات الذكاء الاصطناعي لن تعمل.</p>
+    <button class="btn btn-primary btn-sm" onclick="openKeyModal()">ضبط المفتاح</button>
+  </div>
+
+  <div class="card">
+    <h2>➕ إضافة / تعديل عضو</h2>
+    <div id="emp-edit-banner" class="alert alert-info hidden">وضع التعديل — عدّل البيانات ثم اضغط حفظ</div>
+    <div class="form-row">
+      <input id="emp-name"  placeholder="الاسم الكامل *"/>
+      <input id="emp-title" placeholder="المسمى الوظيفي"/>
+      <input id="emp-dept"  placeholder="القسم / الفريق"/>
+      <input id="emp-exp"   placeholder="سنوات الخبرة" type="number" min="0" style="max-width:120px"/>
+    </div>
+    <div class="form-row">
+      <textarea id="emp-bio"    placeholder="وصف الشخصية والسلوك (اختياري)"></textarea>
+      <textarea id="emp-skills" placeholder="الخبرات والمهارات التقنية (اختياري)"></textarea>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="saveEmployee()">💾 حفظ العضو</button>
+      <button class="btn btn-secondary" onclick="analyzeEmployee()" id="btn-analyze-emp">✨ تحليل AI <span id="spin-emp" class="spinner hidden"></span></button>
+      <button class="btn btn-outline" onclick="clearEmpForm()">مسح</button>
+    </div>
+    <div id="emp-ai-box" class="hidden"></div>
+  </div>
+
+  <div class="card">
+    <h2>👥 قائمة الأعضاء</h2>
+    <div id="emp-alert"></div>
+    <div id="emp-stats" class="stat-grid"></div>
+    <div id="emp-empty" class="empty-state hidden">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <p>لا يوجد أعضاء بعد — أضف أول عضو أعلاه</p>
+    </div>
+    <table id="emp-table-wrap">
+      <thead><tr><th>الاسم</th><th>المسمى</th><th>القسم</th><th>الخبرة</th><th>تحليل AI</th><th>إجراءات</th></tr></thead>
+      <tbody id="emp-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════ RESPONSIBILITIES ═══════════════ -->
+<div id="page-responsibilities" class="page">
+  <div class="card">
+    <h2>➕ إضافة / تعديل مسؤولية</h2>
+    <div id="resp-edit-banner" class="alert alert-info hidden">وضع التعديل</div>
+    <div class="form-row">
+      <input id="resp-name" placeholder="اسم المسؤولية *" style="flex:2"/>
+      <select id="resp-cat">
+        <option value="other">الفئة</option>
+        <option value="onboarding">استقطاب وتعيين</option>
+        <option value="offboarding">إنهاء خدمة</option>
+        <option value="leave">إجازات وغياب</option>
+        <option value="payroll">رواتب واستحقاقات</option>
+        <option value="compliance">امتثال وتقارير</option>
+        <option value="training">تدريب وتطوير</option>
+        <option value="performance">أداء وتقييم</option>
+      </select>
+      <select id="resp-impact">
+        <option value="medium">التأثير — متوسط</option>
+        <option value="low">منخفض</option>
+        <option value="medium">متوسط</option>
+        <option value="high">عالٍ</option>
+        <option value="critical">حرج</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <textarea id="resp-desc" placeholder="الوصف التفصيلي للمسؤولية"></textarea>
+    </div>
+    <div class="form-row">
+      <input id="resp-weight" type="number" min="1" max="5" placeholder="الوزن 1-5" style="max-width:110px"/>
+      <input id="resp-load"   type="number" min="1" max="5" placeholder="العبء 1-5"  style="max-width:110px"/>
+      <input id="resp-freq"   type="number" min="0" placeholder="التكرار/شهر" style="max-width:120px"/>
+      <input id="resp-time"   type="number" min="0" placeholder="الوقت/مرة (دق)" style="max-width:130px"/>
+      <input id="resp-skills" placeholder="المهارات المطلوبة (بفاصلة)" style="flex:2"/>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="saveResponsibility()">💾 حفظ المسؤولية</button>
+      <button class="btn btn-secondary" onclick="analyzeResponsibility()">✨ تحليل AI <span id="spin-resp" class="spinner hidden"></span></button>
+      <button class="btn btn-outline" onclick="clearRespForm()">مسح</button>
+    </div>
+    <div id="resp-ai-box" class="hidden"></div>
+  </div>
+
+  <div class="card">
+    <h2>📋 قائمة المسؤوليات</h2>
+    <div id="resp-alert"></div>
+    <div id="resp-empty" class="empty-state hidden">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 13h4"/></svg>
+      <p>لا توجد مسؤوليات — أضف أول مسؤولية أعلاه</p>
+    </div>
+    <table id="resp-table-wrap">
+      <thead><tr><th>الاسم</th><th>الفئة</th><th>التأثير</th><th>الوزن</th><th>العبء</th><th>المسؤول</th><th>إجراءات</th></tr></thead>
+      <tbody id="resp-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════ DISTRIBUTE ═══════════════ -->
+<div id="page-distribute" class="page">
+  <div class="card">
+    <h2>🤖 التوزيع الذكي بالذكاء الاصطناعي</h2>
+    <p style="color:#64748b;font-size:.88rem;margin-bottom:1rem">يحلل النظام مهارات الأعضاء ومتطلبات كل مسؤولية ويقترح أفضل توزيع مع تحديد المغطين الرئيسي والاحتياطي.</p>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="runDistribute()" id="btn-dist">🚀 تشغيل التوزيع <span id="spin-dist" class="spinner hidden"></span></button>
+    </div>
+    <div id="dist-alert"></div>
+  </div>
+
+  <div id="dist-result" class="hidden">
+    <div class="card">
+      <h2>📊 ملخص الفريق</h2>
+      <p id="dist-team-summary" style="color:#334155;line-height:1.8;font-size:.95rem"></p>
+    </div>
+    <div class="card">
+      <h2>⚖️ توزيع الأعباء</h2>
+      <div id="dist-load"></div>
+    </div>
+    <div id="dist-warn-card" class="card hidden">
+      <h2>⚠️ تحذيرات التحميل الزائد</h2>
+      <div id="dist-warns"></div>
+    </div>
+    <div class="card">
+      <h2>📌 توزيع المسؤوليات</h2>
+      <div id="dist-analysis"></div>
+    </div>
+    <div id="dist-sug-card" class="card hidden">
+      <h2>💡 توصيات</h2>
+      <ul id="dist-suggestions" style="padding-right:1.4rem;line-height:2.1;color:#334155;font-size:.9rem"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ IMPORT / EXPORT ═══════════════ -->
+<div id="page-import" class="page">
+  <div class="card">
+    <h2>⬇️ تحميل نماذج Excel</h2>
+    <div class="actions">
+      <button class="btn btn-outline" onclick="downloadTemplate('employees')">📥 نموذج الأعضاء</button>
+      <button class="btn btn-outline" onclick="downloadTemplate('responsibilities')">📥 نموذج المسؤوليات</button>
+      <button class="btn btn-primary" onclick="exportReport()">📤 تصدير تقرير التوزيع</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>📂 استيراد بيانات الأعضاء</h2>
+    <div id="imp-emp-alert"></div>
+    <div class="form-row">
+      <input type="file" id="imp-emp-file" accept=".xlsx,.xls"/>
+      <button class="btn btn-secondary" onclick="importFile('employees')">استيراد <span id="spin-imp-emp" class="spinner hidden"></span></button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>📂 استيراد بيانات المسؤوليات</h2>
+    <div id="imp-resp-alert"></div>
+    <div class="form-row">
+      <input type="file" id="imp-resp-file" accept=".xlsx,.xls"/>
+      <button class="btn btn-secondary" onclick="importFile('responsibilities')">استيراد <span id="spin-imp-resp" class="spinner hidden"></span></button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>🗑️ إعادة ضبط البيانات</h2>
+    <p style="font-size:.85rem;color:#64748b;margin-bottom:1rem">حذف جميع البيانات المحفوظة في المتصفح.</p>
+    <button class="btn btn-danger" onclick="resetAll()">حذف كل البيانات</button>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch{ return null; } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+  key: () => localStorage.getItem('ant_api_key') || ''
+};
+
+let employees = LS.get('srd_employees') || [];
+let responsibilities = LS.get('srd_responsibilities') || [];
+let editingEmpId = null;
+let editingRespId = null;
+let lastAiEmp = null;
+let lastAiResp = null;
+
+const COLORS = ['#0f766e','#7c3aed','#0369a1','#b45309','#be185d','#15803d','#b91c1c','#0e7490','#7e22ce','#0891b2'];
+const CATS_AR = {onboarding:'استقطاب',offboarding:'إنهاء خدمة',leave:'إجازات',payroll:'رواتب',compliance:'امتثال',training:'تدريب',performance:'أداء',other:'أخرى'};
+const IMP_AR  = {low:'منخفض',medium:'متوسط',high:'عالٍ',critical:'حرج'};
+const IMP_CLS = {low:'badge-low',medium:'badge-medium',high:'badge-high',critical:'badge-critical'};
+
+function save() {
+  LS.set('srd_employees', employees);
+  LS.set('srd_responsibilities', responsibilities);
+}
+
+function uid() { return Math.random().toString(36).slice(2,10); }
+
+// ═══════════════════════════════════════════════
+//  NAV
+// ═══════════════════════════════════════════════
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (name === 'distribute') { renderEmployees(); renderResponsibilities(); }
+}
+
+// ═══════════════════════════════════════════════
+//  API KEY
+// ═══════════════════════════════════════════════
+function openKeyModal() {
+  document.getElementById('api-key-input').value = LS.key();
+  document.getElementById('key-modal').classList.remove('hidden');
+}
+function closeKeyModal() { document.getElementById('key-modal').classList.add('hidden'); }
+function saveKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  localStorage.setItem('ant_api_key', k);
+  closeKeyModal();
+  checkKeyBanners();
+  showAlert('emp-alert', 'تم حفظ مفتاح API', 'success');
+}
+function checkKeyBanners() {
+  const has = !!LS.key();
+  ['key-warn-emp'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', has);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  CLAUDE API
+// ═══════════════════════════════════════════════
+async function callClaude(system, userMsg, maxTokens = 1200) {
+  const key = LS.key();
+  if (!key) { openKeyModal(); throw new Error('no key'); }
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens: maxTokens,
+      system,
+      messages: [{ role: 'user', content: userMsg }]
+    })
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `HTTP ${r.status}`);
+  }
+  const data = await r.json();
+  return data.content[0].text;
+}
+
+function parseJsonSafe(text) {
+  try { return JSON.parse(text); } catch{}
+  const m1 = text.match(/```json\s*([\s\S]*?)```/i);
+  if (m1) { try { return JSON.parse(m1[1].trim()); } catch{} }
+  const m2 = text.match(/```\s*([\s\S]*?)```/);
+  if (m2) { try { return JSON.parse(m2[1].trim()); } catch{} }
+  let depth = 0, start = -1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '{') { if (start === -1) start = i; depth++; }
+    else if (text[i] === '}' && depth > 0) { depth--; if (depth === 0) { try { return JSON.parse(text.slice(start, i+1)); } catch{ start = -1; } } }
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════
+//  ALERTS
+// ═══════════════════════════════════════════════
+function showAlert(id, msg, type = 'success') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(() => el.innerHTML = '', 4500);
+}
+
+// ═══════════════════════════════════════════════
+//  EMPLOYEES
+// ═══════════════════════════════════════════════
+function renderEmployees() {
+  const tbody = document.getElementById('emp-tbody');
+  const empty = document.getElementById('emp-empty');
+  const tbl   = document.getElementById('emp-table-wrap');
+  const stats = document.getElementById('emp-stats');
+  if (!employees.length) {
+    empty.classList.remove('hidden'); tbl.style.display = 'none';
+    stats.innerHTML = ''; return;
+  }
+  empty.classList.add('hidden'); tbl.style.display = '';
+  const analyzed = employees.filter(e => e.aiAnalysis).length;
+  stats.innerHTML = `
+    <div class="stat-card"><div class="num">${employees.length}</div><div class="lbl">إجمالي الأعضاء</div></div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#6366f1,#4f46e5)"><div class="num">${analyzed}</div><div class="lbl">محللون بالذكاء الاصطناعي</div></div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#0891b2,#0e7490)"><div class="num">${responsibilities.filter(r=>r.assignedTo).length}</div><div class="lbl">مسؤوليات موزعة</div></div>`;
+  tbody.innerHTML = employees.map(e => `
+    <tr>
+      <td style="font-weight:600"><span class="dot" style="background:${e.color}"></span>${e.name}</td>
+      <td>${e.title||'—'}</td>
+      <td>${e.dept||'—'}</td>
+      <td>${e.exp||0} سنة</td>
+      <td>${e.aiAnalysis ? '<span class="badge badge-ok">✓ محلل</span>' : '<span style="color:#94a3b8;font-size:.8rem">—</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-outline btn-sm" onclick="editEmployee('${e.id}')">تعديل</button>
+        <button class="btn btn-danger btn-sm" style="margin-right:.3rem" onclick="deleteEmployee('${e.id}')">حذف</button>
+      </td>
+    </tr>`).join('');
+}
+
+function clearEmpForm() {
+  ['emp-name','emp-title','emp-dept','emp-exp','emp-bio','emp-skills'].forEach(id => document.getElementById(id).value = '');
+  editingEmpId = null; lastAiEmp = null;
+  document.getElementById('emp-ai-box').classList.add('hidden');
+  document.getElementById('emp-edit-banner').classList.add('hidden');
+}
+
+function saveEmployee() {
+  const name = document.getElementById('emp-name').value.trim();
+  if (!name) { showAlert('emp-alert', 'يرجى إدخال اسم العضو', 'error'); return; }
+  const emp = {
+    id: editingEmpId || uid(),
+    name,
+    title:  document.getElementById('emp-title').value.trim(),
+    dept:   document.getElementById('emp-dept').value.trim(),
+    exp:    parseInt(document.getElementById('emp-exp').value) || 0,
+    bio:    document.getElementById('emp-bio').value.trim(),
+    skills: document.getElementById('emp-skills').value.trim(),
+    color:  editingEmpId ? (employees.find(e=>e.id===editingEmpId)||{}).color || COLORS[employees.length%COLORS.length] : COLORS[employees.length%COLORS.length],
+    aiAnalysis: lastAiEmp || (editingEmpId ? (employees.find(e=>e.id===editingEmpId)||{}).aiAnalysis : null)
+  };
+  if (editingEmpId) {
+    const idx = employees.findIndex(e => e.id === editingEmpId);
+    if (idx > -1) employees[idx] = emp;
+    showAlert('emp-alert', 'تم تحديث بيانات العضو');
+  } else {
+    employees.push(emp);
+    showAlert('emp-alert', 'تمت إضافة العضو بنجاح');
+  }
+  save(); clearEmpForm(); renderEmployees();
+}
+
+function editEmployee(id) {
+  const e = employees.find(x => x.id === id); if (!e) return;
+  document.getElementById('emp-name').value   = e.name   || '';
+  document.getElementById('emp-title').value  = e.title  || '';
+  document.getElementById('emp-dept').value   = e.dept   || '';
+  document.getElementById('emp-exp').value    = e.exp    || '';
+  document.getElementById('emp-bio').value    = e.bio    || '';
+  document.getElementById('emp-skills').value = e.skills || '';
+  editingEmpId = id; lastAiEmp = e.aiAnalysis || null;
+  document.getElementById('emp-edit-banner').classList.remove('hidden');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if (document.querySelector('nav button:not(.active)')) showPage('employees', document.querySelector('nav button'));
+}
+
+function deleteEmployee(id) {
+  if (!confirm('حذف هذا العضو؟')) return;
+  employees = employees.filter(e => e.id !== id);
+  responsibilities.forEach(r => {
+    if (r.assignedTo === id) r.assignedTo = null;
+    if (r.cover1 === id) r.cover1 = null;
+    if (r.cover2 === id) r.cover2 = null;
+  });
+  save(); renderEmployees();
+}
+
+async function analyzeEmployee() {
+  const bio    = document.getElementById('emp-bio').value.trim();
+  const skills = document.getElementById('emp-skills').value.trim();
+  const spin   = document.getElementById('spin-emp');
+  spin.classList.remove('hidden');
+  document.getElementById('btn-analyze-emp').disabled = true;
+  try {
+    const text = await callClaude(
+      'You are an HR expert. Return ONLY valid JSON, no extra text.',
+      `Analyze this employee:\nDescription: ${bio||'none'}\nSkills: ${skills||'none'}\n\nReturn ONLY JSON: {"personality_type":"…","strengths":["…","…","…"],"weaknesses":["…","…"],"key_skills":["…","…","…","…","…"],"soft_skills":["…","…","…"],"work_style":"…","best_for":["…","…","…"],"summary":"…","confidence":80}`
+    );
+    const r = parseJsonSafe(text);
+    lastAiEmp = r;
+    const box = document.getElementById('emp-ai-box');
+    if (!r || r.error) {
+      box.innerHTML = `<div class="ai-box"><p style="color:red">فشل التحليل. تحقق من مفتاح API.</p></div>`;
+    } else {
+      box.innerHTML = `<div class="ai-box">
+        <h4>✨ نتيجة التحليل</h4>
+        <p><strong>نوع الشخصية:</strong> ${r.personality_type||'—'}</p>
+        <p><strong>نقاط القوة:</strong> ${(r.strengths||[]).map(s=>`<span class="tag">${s}</span>`).join('')}</p>
+        <p><strong>المهارات الأساسية:</strong> ${(r.key_skills||[]).map(s=>`<span class="tag">${s}</span>`).join('')}</p>
+        <p><strong>أسلوب العمل:</strong> ${r.work_style||'—'}</p>
+        <p><strong>الملخص:</strong> ${r.summary||'—'}</p>
+        <p style="color:#64748b;font-size:.8rem">درجة الثقة: ${r.confidence||'—'}%</p>
+      </div>`;
+    }
+    box.classList.remove('hidden');
+  } catch(e) {
+    showAlert('emp-alert', 'خطأ: ' + e.message, 'error');
+  } finally {
+    spin.classList.add('hidden');
+    document.getElementById('btn-analyze-emp').disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  RESPONSIBILITIES
+// ═══════════════════════════════════════════════
+function renderResponsibilities() {
+  const tbody = document.getElementById('resp-tbody');
+  const empty = document.getElementById('resp-empty');
+  const tbl   = document.getElementById('resp-table-wrap');
+  if (!responsibilities.length) {
+    empty.classList.remove('hidden'); tbl.style.display = 'none'; return;
+  }
+  empty.classList.add('hidden'); tbl.style.display = '';
+  tbody.innerHTML = responsibilities.map(r => {
+    const owner = employees.find(e => e.id === r.assignedTo);
+    return `<tr>
+      <td style="font-weight:600">${r.name}</td>
+      <td>${CATS_AR[r.category]||'أخرى'}</td>
+      <td><span class="badge ${IMP_CLS[r.impact]||'badge-medium'}">${IMP_AR[r.impact]||'متوسط'}</span></td>
+      <td style="text-align:center">${r.weight||3}</td>
+      <td style="text-align:center">${r.load||3}</td>
+      <td>${owner ? `<span class="dot" style="background:${owner.color}"></span>${owner.name}` : '<span style="color:#94a3b8">—</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-outline btn-sm" onclick="editResponsibility('${r.id}')">تعديل</button>
+        <button class="btn btn-danger btn-sm" style="margin-right:.3rem" onclick="deleteResponsibility('${r.id}')">حذف</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function clearRespForm() {
+  ['resp-name','resp-desc','resp-weight','resp-load','resp-freq','resp-time','resp-skills'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('resp-cat').value = 'other';
+  document.getElementById('resp-impact').value = 'medium';
+  editingRespId = null; lastAiResp = null;
+  document.getElementById('resp-ai-box').classList.add('hidden');
+  document.getElementById('resp-edit-banner').classList.add('hidden');
+}
+
+function saveResponsibility() {
+  const name = document.getElementById('resp-name').value.trim();
+  if (!name) { showAlert('resp-alert', 'يرجى إدخال اسم المسؤولية', 'error'); return; }
+  const sk = document.getElementById('resp-skills').value.trim();
+  const resp = {
+    id:        editingRespId || uid(),
+    name,
+    desc:      document.getElementById('resp-desc').value.trim(),
+    category:  document.getElementById('resp-cat').value,
+    impact:    document.getElementById('resp-impact').value,
+    weight:    parseInt(document.getElementById('resp-weight').value) || 3,
+    load:      parseInt(document.getElementById('resp-load').value)   || 3,
+    freq:      parseInt(document.getElementById('resp-freq').value)   || null,
+    time:      parseInt(document.getElementById('resp-time').value)   || null,
+    reqSkills: sk ? sk.split(',').map(s=>s.trim()).filter(Boolean) : [],
+    assignedTo: editingRespId ? (responsibilities.find(r=>r.id===editingRespId)||{}).assignedTo : null,
+    cover1:     editingRespId ? (responsibilities.find(r=>r.id===editingRespId)||{}).cover1 : null,
+    cover2:     editingRespId ? (responsibilities.find(r=>r.id===editingRespId)||{}).cover2 : null,
+    aiData:    lastAiResp || (editingRespId ? (responsibilities.find(r=>r.id===editingRespId)||{}).aiData : null)
+  };
+  if (editingRespId) {
+    const idx = responsibilities.findIndex(r => r.id === editingRespId);
+    if (idx > -1) responsibilities[idx] = resp;
+    showAlert('resp-alert', 'تم تحديث المسؤولية');
+  } else {
+    responsibilities.push(resp);
+    showAlert('resp-alert', 'تمت إضافة المسؤولية بنجاح');
+  }
+  save(); clearRespForm(); renderResponsibilities();
+}
+
+function editResponsibility(id) {
+  const r = responsibilities.find(x => x.id === id); if (!r) return;
+  document.getElementById('resp-name').value   = r.name   || '';
+  document.getElementById('resp-desc').value   = r.desc   || '';
+  document.getElementById('resp-cat').value    = r.category || 'other';
+  document.getElementById('resp-impact').value = r.impact  || 'medium';
+  document.getElementById('resp-weight').value = r.weight  || '';
+  document.getElementById('resp-load').value   = r.load    || '';
+  document.getElementById('resp-freq').value   = r.freq    || '';
+  document.getElementById('resp-time').value   = r.time    || '';
+  document.getElementById('resp-skills').value = (r.reqSkills||[]).join(', ');
+  editingRespId = id; lastAiResp = r.aiData || null;
+  document.getElementById('resp-edit-banner').classList.remove('hidden');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function deleteResponsibility(id) {
+  if (!confirm('حذف هذه المسؤولية؟')) return;
+  responsibilities = responsibilities.filter(r => r.id !== id);
+  save(); renderResponsibilities();
+}
+
+async function analyzeResponsibility() {
+  const name = document.getElementById('resp-name').value.trim();
+  const desc = document.getElementById('resp-desc').value.trim();
+  const spin = document.getElementById('spin-resp');
+  spin.classList.remove('hidden');
+  try {
+    const text = await callClaude(
+      'You are an HR expert. Return ONLY valid JSON, no extra text.',
+      `Analyze this job responsibility:\nName: ${name||'unspecified'}\nDescription: ${desc||'none'}\n\nReturn ONLY JSON: {"weight":3,"load":3,"impact":"medium","complexity":"moderate","freq":10,"time_minutes":30,"category":"other","systems":["…"],"req_skills":["…","…"],"req_traits":["…","…"],"sub_tasks":["…","…","…"],"kpi":"…","risk":"…","summary":"…"}`
+    );
+    const r = parseJsonSafe(text);
+    lastAiResp = r;
+    const box = document.getElementById('resp-ai-box');
+    if (!r || r.error) {
+      box.innerHTML = '<div class="ai-box"><p style="color:red">فشل التحليل.</p></div>';
+    } else {
+      if (r.weight) document.getElementById('resp-weight').value = r.weight;
+      if (r.load)   document.getElementById('resp-load').value   = r.load;
+      if (r.freq || r.freq_month) document.getElementById('resp-freq').value = r.freq||r.freq_month;
+      if (r.time_minutes) document.getElementById('resp-time').value = r.time_minutes;
+      if (r.impact && ['low','medium','high','critical'].includes(r.impact))
+        document.getElementById('resp-impact').value = r.impact;
+      if (r.category && document.querySelector(`#resp-cat option[value="${r.category}"]`))
+        document.getElementById('resp-cat').value = r.category;
+      if (r.req_skills && r.req_skills.length)
+        document.getElementById('resp-skills').value = r.req_skills.filter(s=>s!=='…').join(', ');
+      box.innerHTML = `<div class="ai-box">
+        <h4>✨ نتيجة التحليل (تم تعبئة الحقول تلقائياً)</h4>
+        <p><strong>التعقيد:</strong> ${r.complexity||'—'} | <strong>المخاطر:</strong> ${r.risk||'—'}</p>
+        <p><strong>المهام الفرعية:</strong> ${(r.sub_tasks||[]).filter(s=>s!=='…').map(s=>`<span class="tag">${s}</span>`).join('')}</p>
+        <p><strong>KPI:</strong> ${r.kpi||'—'}</p>
+        <p><strong>الملخص:</strong> ${r.summary||'—'}</p>
+      </div>`;
+    }
+    box.classList.remove('hidden');
+  } catch(e) {
+    showAlert('resp-alert', 'خطأ: ' + e.message, 'error');
+  } finally {
+    spin.classList.add('hidden');
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  DISTRIBUTE
+// ═══════════════════════════════════════════════
+async function runDistribute() {
+  if (!employees.length || !responsibilities.length) {
+    showAlert('dist-alert', 'يجب إضافة عضو واحد ومسؤولية واحدة على الأقل', 'error'); return;
+  }
+  const spin = document.getElementById('spin-dist');
+  const btn  = document.getElementById('btn-dist');
+  spin.classList.remove('hidden'); btn.disabled = true;
+  document.getElementById('dist-result').classList.add('hidden');
+
+  const empLines = employees.map(e =>
+    `ID:${e.id} | ${e.name} | ${e.title||''} | ${e.exp||0}yrs | Skills:${((e.aiAnalysis||{}).key_skills||[]).join(',')||e.skills||''} | Bio:${((e.aiAnalysis||{}).summary||e.bio||'').slice(0,100)}`
+  ).join('\n');
+  const respLines = responsibilities.map(r =>
+    `ID:${r.id} | ${r.name} | W:${r.weight||3} L:${r.load||3} | Impact:${r.impact||'medium'} | Skills:${(r.reqSkills||[]).join(',')} | Desc:${(r.desc||'').slice(0,120)}`
+  ).join('\n');
+
+  const prompt = `TEAM:\n${empLines}\n\nRESPONSIBILITIES:\n${respLines}\n\nReturn ONLY valid JSON using the EXACT IDs above. owner/cover1/cover2 must be different people:\n{"analysis":[{"resp_id":"ID","owner_id":"ID","cover1_id":"ID","cover2_id":"ID","rankings":[{"emp_id":"ID","rank":1,"score":85,"role":"Owner","reasons":["r1","r2"],"warnings":[],"fit_summary":"sentence"},{"emp_id":"ID","rank":2,"score":70,"role":"Cover1","reasons":["r"],"warnings":[],"fit_summary":"sentence"},{"emp_id":"ID","rank":3,"score":55,"role":"Cover2","reasons":["r"],"warnings":[],"fit_summary":"sentence"}],"recommendation":"advice","risk_if_wrong":"consequence"}],"team_summary":"2 sentences","load_analysis":[{"emp_id":"ID","load_pct":30,"status":"balanced","comment":"note"}],"overload_warnings":[],"suggestions":["s1","s2"]}`;
+
+  try {
+    const text = await callClaude(
+      'You are an expert HR specialist. Return ONLY valid JSON. Use EXACT employee and responsibility IDs provided.',
+      prompt, 4000
+    );
+    const result = parseJsonSafe(text);
+    if (!result) { showAlert('dist-alert', 'فشل تحليل الرد من AI — حاول مجدداً', 'error'); return; }
+
+    // Apply assignments
+    (result.analysis||[]).forEach(item => {
+      const r = responsibilities.find(r => r.id === item.resp_id);
+      if (!r) return;
+      const rnk = item.rankings||[];
+      r.assignedTo = item.owner_id  || (rnk[0]||{}).emp_id || null;
+      r.cover1     = item.cover1_id || (rnk[1]||{}).emp_id || null;
+      r.cover2     = item.cover2_id || (rnk[2]||{}).emp_id || null;
+    });
+    save(); renderResponsibilities();
+    renderDistResult(result);
+    document.getElementById('dist-result').classList.remove('hidden');
+    showAlert('dist-alert', 'تم التوزيع بنجاح ✅', 'success');
+  } catch(e) {
+    showAlert('dist-alert', 'خطأ: ' + e.message, 'error');
+  } finally {
+    spin.classList.add('hidden'); btn.disabled = false;
+  }
+}
+
+function renderDistResult(result) {
+  document.getElementById('dist-team-summary').textContent = result.team_summary || '';
+
+  const loadEl = document.getElementById('dist-load');
+  loadEl.innerHTML = (result.load_analysis||[]).map(la => {
+    const emp = employees.find(e => e.id === la.emp_id);
+    const pct = Math.min(la.load_pct||0, 100);
+    const clr = pct > 60 ? '#ef4444' : pct < 15 ? '#3b82f6' : '#0f766e';
+    return `<div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.7rem;flex-wrap:wrap">
+      <span style="min-width:140px;font-size:.88rem;font-weight:600">${emp?`<span class="dot" style="background:${emp.color}"></span>${emp.name}`:la.emp_id}</span>
+      <div class="load-wrap"><div class="load-bar" style="width:${pct}%;background:${clr}"></div></div>
+      <span style="min-width:44px;font-size:.85rem;font-weight:700;color:${clr}">${pct}%</span>
+      <span style="font-size:.8rem;color:#64748b">${la.comment||''}</span>
+    </div>`;
+  }).join('');
+
+  const warns = result.overload_warnings||[];
+  const wc = document.getElementById('dist-warn-card');
+  if (warns.length) {
+    wc.classList.remove('hidden');
+    document.getElementById('dist-warns').innerHTML = warns.map(w=>`<div class="overload-warn">⚠️ ${w}</div>`).join('');
+  } else wc.classList.add('hidden');
+
+  document.getElementById('dist-analysis').innerHTML = (result.analysis||[]).map(item => {
+    const resp = responsibilities.find(r => r.id === item.resp_id);
+    const ranks = (item.rankings||[]).slice(0,3);
+    const roles = ['صاحب المسؤولية','المغطي الرئيسي','المغطي الاحتياطي'];
+    return `<div class="dist-card">
+      <h4>📌 ${resp?resp.name:item.resp_id}</h4>
+      <p style="font-size:.82rem;color:#64748b;margin-bottom:.6rem">${item.recommendation||''}</p>
+      ${ranks.map((rk,i) => {
+        const emp = employees.find(e => e.id === rk.emp_id);
+        return `<div class="ranking-row">
+          <div class="rank-badge rank-${i+1}">${i+1}</div>
+          ${emp?`<span class="dot" style="background:${emp.color}"></span>`:''}
+          <strong style="min-width:120px">${emp?emp.name:rk.emp_id}</strong>
+          <span style="color:#64748b;font-size:.81rem;flex:1">${roles[i]||''}</span>
+          <span style="font-size:.82rem;font-weight:700;color:#0f766e">${rk.score||0}%</span>
+        </div>`;
+      }).join('')}
+      ${item.risk_if_wrong?`<p style="font-size:.8rem;color:#b91c1c;margin-top:.5rem">⚠️ ${item.risk_if_wrong}</p>`:''}
+    </div>`;
+  }).join('');
+
+  const sug = result.suggestions||[];
+  const sc = document.getElementById('dist-sug-card');
+  if (sug.length) {
+    sc.classList.remove('hidden');
+    document.getElementById('dist-suggestions').innerHTML = sug.map(s=>`<li>${s}</li>`).join('');
+  } else sc.classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════════
+//  IMPORT / EXPORT (SheetJS)
+// ═══════════════════════════════════════════════
+function downloadTemplate(type) {
+  const wb = XLSX.utils.book_new();
+  if (type === 'employees') {
+    const data = [
+      ['الاسم الكامل *','المسمى الوظيفي *','القسم / الفريق','سنوات الخبرة','وصف الشخصية','الخبرات والمهارات','ملاحظات'],
+      ['أحمد العمري','أخصائي موارد بشرية','الاستحقاقات',5,'دقيق وممتاز تحت الضغط','Oracle HCM, GOSI, Excel',''],
+      ['سارة الزهراني','مشرفة إجازات','دورة الموظف',8,'منهجية ودقيقة','Oracle HCM, ECTS',''],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), 'بيانات الموظفين');
+    XLSX.writeFile(wb, 'قالب_بيانات_الموظفين.xlsx');
+  } else {
+    const data = [
+      ['اسم المسؤولية *','الوصف التفصيلي','الفئة','مستوى التأثير','الوزن 1-5','العبء 1-5','التكرار/شهر','الوقت/مرة (دقيقة)','الأنظمة','المهارات المطلوبة','ملاحظات'],
+      ['معالجة طلبات الإجازة','40 طلب شهرياً / 15 دقيقة لكل طلب','إجازات وغياب','متوسط',3,2,40,15,'Oracle HCM','دقة, Oracle',''],
+      ['احتساب الرواتب','مرة شهرياً / 3 أيام عمل كاملة','رواتب واستحقاقات','حرج',5,5,1,1440,'Oracle, ECTS, GOSI','محاسبة, دقة',''],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), 'المسؤوليات');
+    XLSX.writeFile(wb, 'قالب_بيانات_المسؤوليات.xlsx');
+  }
+}
+
+function exportReport() {
+  const wb = XLSX.utils.book_new();
+  const empMap = Object.fromEntries(employees.map(e=>[e.id,e]));
+  const total = responsibilities.length || 1;
+
+  // Sheet 1: Distribution
+  const rows1 = [['المسؤولية','الفئة','التأثير','الوزن','العبء','صاحب المسؤولية','المغطي الرئيسي','المغطي الاحتياطي','ساعات/شهر']];
+  responsibilities.forEach(r => {
+    const hrs = r.freq && r.time ? Math.round(r.freq * r.time / 60 * 10) / 10 : '—';
+    rows1.push([
+      r.name, CATS_AR[r.category]||'أخرى', IMP_AR[r.impact]||'متوسط', r.weight||3, r.load||3,
+      empMap[r.assignedTo]?.name||'—', empMap[r.cover1]?.name||'—', empMap[r.cover2]?.name||'—', hrs
+    ]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows1), 'ملخص التوزيع');
+
+  // Sheet 2: Team load
+  const rows2 = [['الموظف','المسمى الوظيفي','مسؤولياته','% من الإجمالي','مغطي رئيسي','مغطي احتياطي','الحالة']];
+  employees.forEach(emp => {
+    const owned = responsibilities.filter(r=>r.assignedTo===emp.id).length;
+    const c1    = responsibilities.filter(r=>r.cover1===emp.id).length;
+    const c2    = responsibilities.filter(r=>r.cover2===emp.id).length;
+    const pct   = Math.round(owned/total*100*10)/10;
+    const st    = pct>60?'محمّل':pct<15?'خفيف':'متوازن';
+    rows2.push([emp.name, emp.title||'', owned, `${pct}%`, c1, c2, st]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows2), 'أعباء الفريق');
+  XLSX.writeFile(wb, 'تقرير_توزيع_المسؤوليات.xlsx');
+}
+
+function importFile(type) {
+  const isEmp = type === 'employees';
+  const fileInput = document.getElementById(isEmp ? 'imp-emp-file' : 'imp-resp-file');
+  const alertId   = isEmp ? 'imp-emp-alert' : 'imp-resp-alert';
+  const spinId    = isEmp ? 'spin-imp-emp' : 'spin-imp-resp';
+  const file = fileInput.files[0];
+  if (!file) { showAlert(alertId, 'يرجى اختيار ملف Excel', 'error'); return; }
+  document.getElementById(spinId).classList.remove('hidden');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames.find(n=>!n.includes('دليل'))||wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      const hi   = rows.findIndex((row,i) => i<8 && row.filter(Boolean).length >= 3);
+      const headers = (rows[hi]||[]).map(c=>String(c||'').replace(/[*]/g,'').trim());
+      let added = 0;
+
+      function gv(row, ...keys) {
+        for (const k of keys)
+          for (let ci=0;ci<headers.length;ci++)
+            if (headers[ci].includes(k) && ci<row.length && row[ci]) return String(row[ci]).trim();
+        return '';
+      }
+
+      const CMAP={استقطاب:'onboarding',إنهاء:'offboarding',إجازات:'leave',رواتب:'payroll',امتثال:'compliance',تدريب:'training',أداء:'performance'};
+      const IMAP={منخفض:'low',متوسط:'medium','عالٍ':'high',حرج:'critical'};
+
+      for (let ri = hi+1; ri < rows.length; ri++) {
+        const row = rows[ri];
+        if (!row.some(Boolean)) continue;
+        if (isEmp) {
+          const name = gv(row,'الاسم');
+          if (!name || name.length<2) continue;
+          employees.push({id:uid(),name,title:gv(row,'المسمى','الوظيفي'),dept:gv(row,'القسم','الفريق'),
+            exp:parseInt(gv(row,'الخبرة','سنوات'))||0,bio:gv(row,'وصف','شخصية'),skills:gv(row,'مهارات','خبرات'),
+            color:COLORS[employees.length%COLORS.length],aiAnalysis:null}); added++;
+        } else {
+          const name = gv(row,'اسم المسؤولية','الاسم');
+          if (!name || name.length<2) continue;
+          const cat_r=gv(row,'الفئة'), imp_r=gv(row,'التأثير','مستوى'), sys_s=gv(row,'الأنظمة'), sk_s=gv(row,'المهارات');
+          responsibilities.push({id:uid(),name,desc:gv(row,'الوصف'),
+            category:Object.entries(CMAP).find(([k])=>cat_r.includes(k))?.[1]||'other',
+            impact:Object.entries(IMAP).find(([k])=>imp_r.includes(k))?.[1]||'medium',
+            weight:parseInt(gv(row,'الوزن'))||3,load:parseInt(gv(row,'العبء'))||3,
+            freq:parseInt(gv(row,'التكرار'))||null,time:parseInt(gv(row,'الوقت'))||null,
+            systems:sys_s?sys_s.split(',').map(s=>s.trim()).filter(Boolean):[],
+            reqSkills:sk_s?sk_s.split(',').map(s=>s.trim()).filter(Boolean):[],
+            assignedTo:null,cover1:null,cover2:null,aiData:null}); added++;
+        }
+      }
+      save(); renderEmployees(); renderResponsibilities();
+      showAlert(alertId, `تم استيراد ${added} سجل بنجاح ✅`, 'success');
+    } catch(err) {
+      showAlert(alertId, 'خطأ في قراءة الملف: ' + err.message, 'error');
+    } finally {
+      document.getElementById(spinId).classList.add('hidden');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function resetAll() {
+  if (!confirm('سيتم حذف جميع بيانات الأعضاء والمسؤوليات. هل أنت متأكد؟')) return;
+  employees = []; responsibilities = [];
+  save(); renderEmployees(); renderResponsibilities();
+  showAlert('emp-alert', 'تم حذف جميع البيانات');
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+checkKeyBanners();
+renderEmployees();
+renderResponsibilities();
+</script>
+</body>
+</html>
