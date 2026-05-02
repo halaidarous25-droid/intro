@@ -8,9 +8,10 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;background:#f0fdf4;color:#1e293b;min-height:100vh}
-header{background:linear-gradient(135deg,#0f766e,#134e4a);color:#fff;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+header{background:linear-gradient(135deg,#0f766e,#134e4a);color:#fff;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2);flex-wrap:wrap;gap:.5rem}
 .header-left{display:flex;align-items:center;gap:.75rem}
 header h1{font-size:1.3rem;font-weight:700}
+.header-btns{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
 nav{background:#134e4a;display:flex;overflow-x:auto;border-bottom:2px solid #0f766e}
 nav button{background:none;border:none;color:#99f6e4;padding:.8rem 1.6rem;cursor:pointer;font-size:.95rem;white-space:nowrap;transition:all .2s;font-family:Arial,sans-serif;border-bottom:2px solid transparent;margin-bottom:-2px}
 nav button:hover{background:rgba(255,255,255,.08);color:#fff}
@@ -29,6 +30,7 @@ textarea{min-height:72px;resize:vertical}
 .btn-secondary{background:#6366f1;color:#fff}
 .btn-danger{background:#ef4444;color:#fff}
 .btn-outline{background:#fff;color:#0f766e;border:1.5px solid #0f766e}
+.btn-demo{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff}
 .btn-sm{padding:.3rem .7rem;font-size:.8rem}
 .actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
 table{width:100%;border-collapse:collapse;font-size:.87rem}
@@ -42,9 +44,11 @@ tr:hover td{background:#f8fffe}
 .badge-high{background:#fef3c7;color:#b45309}
 .badge-critical{background:#fee2e2;color:#b91c1c}
 .badge-ok{background:#d1fae5;color:#065f46}
+.badge-demo{background:#fef3c7;color:#92400e}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:.35rem;flex-shrink:0}
 .ai-box{background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #a7f3d0;border-radius:10px;padding:.9rem 1.1rem;margin-top:.75rem;font-size:.85rem;line-height:1.7}
 .ai-box h4{color:#0f766e;margin-bottom:.4rem;font-size:.9rem}
+.ai-box.demo-box{background:linear-gradient(135deg,#fffbeb,#fef3c7);border-color:#fcd34d}
 .tag{display:inline-block;background:#e0f2fe;color:#0369a1;border-radius:6px;padding:.15rem .5rem;font-size:.75rem;margin:.1rem}
 .dist-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:11px;padding:1rem 1.1rem;margin-bottom:.8rem}
 .dist-card h4{color:#1e293b;margin-bottom:.6rem;font-size:.95rem}
@@ -62,9 +66,12 @@ tr:hover td{background:#f8fffe}
 .alert-success{background:#dcfce7;color:#15803d;border:1px solid #86efac}
 .alert-error{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5}
 .alert-info{background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd}
+.alert-demo{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
 .hidden{display:none!important}
 .page{display:none}
 .page.active{display:block}
+.demo-banner{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:2px solid #f59e0b;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.demo-banner p{flex:1;color:#92400e;font-size:.9rem;font-weight:600}
 .key-banner{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #f59e0b;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
 .key-banner p{flex:1;color:#92400e;font-size:.9rem}
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1rem}
@@ -77,6 +84,8 @@ tr:hover td{background:#f8fffe}
 .empty-state{text-align:center;padding:2.5rem;color:#94a3b8}
 .empty-state svg{margin-bottom:.75rem;opacity:.4}
 .overload-warn{background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:.65rem 1rem;font-size:.85rem;color:#9a3412;margin-bottom:.5rem}
+.demo-indicator{background:#f59e0b;color:#fff;border-radius:6px;padding:.15rem .55rem;font-size:.75rem;font-weight:700;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
 @media(max-width:600px){header h1{font-size:1.1rem}.btn{padding:.45rem .9rem;font-size:.82rem}th,td{padding:.5rem .6rem}}
 </style>
 </head>
@@ -88,14 +97,19 @@ tr:hover td{background:#f8fffe}
       <path d="M17 11c2.2.4 4 2.2 4 5"/><path d="M7 11c-2.2.4-4 2.2-4 5"/>
     </svg>
     <div>
-      <h1>نظام توزيع المسؤوليات الذكي</h1>
+      <h1>نظام توزيع المسؤوليات الذكي <span id="demo-indicator" class="demo-indicator hidden">وضع تجريبي</span></h1>
       <div style="font-size:.75rem;opacity:.7">Smart Responsibility Distribution</div>
     </div>
   </div>
-  <button class="btn btn-outline" style="border-color:#5eead4;color:#5eead4;font-size:.82rem" onclick="openKeyModal()">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-    مفتاح API
-  </button>
+  <div class="header-btns">
+    <button class="btn btn-demo" onclick="loadDemo()">
+      🎯 وضع تجريبي
+    </button>
+    <button class="btn btn-outline" style="border-color:#5eead4;color:#5eead4;font-size:.82rem" onclick="openKeyModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      مفتاح API
+    </button>
+  </div>
 </header>
 
 <nav>
@@ -109,7 +123,8 @@ tr:hover td{background:#f8fffe}
 <div id="key-modal" class="modal-bg hidden">
   <div class="modal">
     <h3>🔑 مفتاح Anthropic API</h3>
-    <p style="font-size:.85rem;color:#64748b;margin-bottom:1rem">يُخزَّن المفتاح في المتصفح فقط ولا يُرسَل لأي خادم خارجي.</p>
+    <p style="font-size:.85rem;color:#64748b;margin-bottom:.5rem">يُخزَّن المفتاح في المتصفح فقط ولا يُرسَل لأي خادم خارجي.</p>
+    <p style="font-size:.82rem;color:#0369a1;margin-bottom:1rem">احصل على مفتاح مجاني من: <strong>console.anthropic.com</strong></p>
     <div class="form-row" style="margin-bottom:1rem">
       <input id="api-key-input" type="password" placeholder="sk-ant-..." style="flex:1"/>
     </div>
@@ -124,9 +139,15 @@ tr:hover td{background:#f8fffe}
 
 <!-- ═══════════════ EMPLOYEES ═══════════════ -->
 <div id="page-employees" class="page active">
+  <div id="demo-banner-emp" class="demo-banner hidden">
+    <span style="font-size:1.4rem">🎯</span>
+    <p>الوضع التجريبي نشط — البيانات نموذجية والتحليل محاكى. لاستخدام الذكاء الاصطناعي الحقيقي أضف مفتاح API.</p>
+    <button class="btn btn-sm" style="background:#f59e0b;color:#fff" onclick="exitDemo()">إنهاء التجربة</button>
+  </div>
   <div id="key-warn-emp" class="key-banner hidden">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    <p>لم يتم ضبط مفتاح API بعد — ميزات الذكاء الاصطناعي لن تعمل.</p>
+    <p>لم يتم ضبط مفتاح API — جرب النظام بدونه:</p>
+    <button class="btn btn-demo btn-sm" onclick="loadDemo()">🎯 ابدأ الوضع التجريبي</button>
     <button class="btn btn-primary btn-sm" onclick="openKeyModal()">ضبط المفتاح</button>
   </div>
 
@@ -157,7 +178,7 @@ tr:hover td{background:#f8fffe}
     <div id="emp-stats" class="stat-grid"></div>
     <div id="emp-empty" class="empty-state hidden">
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-      <p>لا يوجد أعضاء بعد — أضف أول عضو أعلاه</p>
+      <p>لا يوجد أعضاء بعد — اضغط <strong>"🎯 وضع تجريبي"</strong> لتحميل بيانات جاهزة</p>
     </div>
     <table id="emp-table-wrap">
       <thead><tr><th>الاسم</th><th>المسمى</th><th>القسم</th><th>الخبرة</th><th>تحليل AI</th><th>إجراءات</th></tr></thead>
@@ -214,7 +235,7 @@ tr:hover td{background:#f8fffe}
     <div id="resp-alert"></div>
     <div id="resp-empty" class="empty-state hidden">
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 13h4"/></svg>
-      <p>لا توجد مسؤوليات — أضف أول مسؤولية أعلاه</p>
+      <p>لا توجد مسؤوليات بعد</p>
     </div>
     <table id="resp-table-wrap">
       <thead><tr><th>الاسم</th><th>الفئة</th><th>التأثير</th><th>الوزن</th><th>العبء</th><th>المسؤول</th><th>إجراءات</th></tr></thead>
@@ -309,6 +330,7 @@ let editingEmpId = null;
 let editingRespId = null;
 let lastAiEmp = null;
 let lastAiResp = null;
+let demoMode = false;
 
 const COLORS = ['#0f766e','#7c3aed','#0369a1','#b45309','#be185d','#15803d','#b91c1c','#0e7490','#7e22ce','#0891b2'];
 const CATS_AR = {onboarding:'استقطاب',offboarding:'إنهاء خدمة',leave:'إجازات',payroll:'رواتب',compliance:'امتثال',training:'تدريب',performance:'أداء',other:'أخرى'};
@@ -319,8 +341,107 @@ function save() {
   LS.set('srd_employees', employees);
   LS.set('srd_responsibilities', responsibilities);
 }
-
 function uid() { return Math.random().toString(36).slice(2,10); }
+
+// ═══════════════════════════════════════════════
+//  DEMO DATA
+// ═══════════════════════════════════════════════
+const DEMO_EMPS = [
+  {id:'de1',name:'أحمد العمري',title:'أخصائي موارد بشرية',dept:'الاستحقاقات',exp:5,bio:'دقيق ومنظم، ممتاز تحت الضغط',skills:'Oracle HCM, GOSI, Excel',color:'#0f766e',
+    aiAnalysis:{personality_type:'ISTJ — المحقق',strengths:['دقة عالية','منظم','موثوق','يعمل تحت الضغط'],weaknesses:['صلابة أحياناً','يقاوم التغيير'],key_skills:['Oracle HCM','GOSI','Excel','التقارير','الرواتب'],soft_skills:['التنظيم','الموثوقية','الانضباط'],work_style:'منهجي ودقيق يفضل العمل وفق إجراءات واضحة',best_for:['الرواتب','الامتثال','التقارير'],summary:'موظف دقيق ومنظم متخصص في أنظمة الموارد البشرية والرواتب',confidence:88}},
+  {id:'de2',name:'سارة الزهراني',title:'مشرفة إجازات',dept:'دورة الموظف',exp:8,bio:'منهجية وصبورة، تحب التعامل مع الموظفين',skills:'Oracle HCM, ECTS, خدمة العملاء',color:'#7c3aed',
+    aiAnalysis:{personality_type:'ESFJ — المقدم',strengths:['تواصل ممتاز','صبر','دقة في الإجراءات','تعاطف'],weaknesses:['تتأثر بالمواقف العاطفية','صعوبة في الرفض'],key_skills:['Oracle HCM','ECTS','إدارة الوقت','خدمة العملاء','الإجازات'],soft_skills:['التواصل','التعاطف','الصبر'],work_style:'اجتماعية تحب مساعدة الآخرين وتعمل بشكل منظم',best_for:['الإجازات','التعامل مع الموظفين','الاستقطاب'],summary:'مشرفة متمرسة في إدارة الإجازات والتعامل مع الموظفين بخبرة 8 سنوات',confidence:85}},
+  {id:'de3',name:'محمد القحطاني',title:'محاسب رواتب',dept:'المالية',exp:6,bio:'تحليلي ودقيق جداً في الأرقام',skills:'Oracle, ECTS, GOSI, محاسبة, Excel متقدم',color:'#0369a1',
+    aiAnalysis:{personality_type:'INTJ — المعماري',strengths:['دقة في الأرقام','تحليلي','موثوق','مستقل'],weaknesses:['يفضل العمل منفرداً','قليل التواصل'],key_skills:['Oracle','ECTS','GOSI','محاسبة','Excel'],soft_skills:['الدقة','التحليل','الاستقلالية'],work_style:'مستقل ودقيق يفضل العمل على البيانات والأرقام',best_for:['الرواتب','الامتثال','التدقيق المالي'],summary:'محاسب متخصص في الرواتب والاستحقاقات بخبرة واسعة في الأنظمة المالية',confidence:91}},
+  {id:'de4',name:'نورة العتيبي',title:'أخصائية تدريب',dept:'التدريب والتطوير',exp:4,bio:'مبدعة ومحبة للتعلم وتطوير الآخرين',skills:'التدريب, تصميم البرامج, PowerPoint, LMS',color:'#b45309',
+    aiAnalysis:{personality_type:'ENFP — المبادر',strengths:['إبداع','طاقة عالية','تواصل','تحفيز'],weaknesses:['قد تتشتت','تحتاج توجيهاً في التفاصيل'],key_skills:['التدريب','تصميم البرامج','PowerPoint','LMS','التطوير'],soft_skills:['الإبداع','التحفيز','التواصل'],work_style:'مبدعة وديناميكية تحب الأفكار الجديدة والعمل مع الناس',best_for:['التدريب','تطوير المواهب','الاستقطاب'],summary:'أخصائية تدريب مبدعة تتقن تصميم وتنفيذ برامج التطوير بأسلوب جذاب',confidence:83}},
+];
+
+const DEMO_RESPS = [
+  {id:'dr1',name:'معالجة طلبات الإجازة',desc:'استقبال 40 طلب شهرياً، التحقق من الرصيد، الاعتماد أو الرفض، تحديث Oracle HCM',category:'leave',impact:'medium',weight:3,load:2,freq:40,time:15,reqSkills:['Oracle HCM','ECTS','دقة'],assignedTo:'de2',cover1:'de1',cover2:'de3',aiData:null},
+  {id:'dr2',name:'احتساب الرواتب الشهرية',desc:'معالجة كشوف الرواتب، تسوية الاستحقاقات، مراجعة GOSI، مرة شهرياً / 3 أيام',category:'payroll',impact:'critical',weight:5,load:5,freq:1,time:1440,reqSkills:['Oracle','ECTS','GOSI','محاسبة'],assignedTo:'de3',cover1:'de1',cover2:'de2',aiData:null},
+  {id:'dr3',name:'استقطاب وتعيين الموظفين',desc:'نشر الوظائف، مراجعة السير الذاتية، جدولة المقابلات، إعداد عروض التعيين',category:'onboarding',impact:'high',weight:4,load:3,freq:5,time:180,reqSkills:['التواصل','التقييم','Oracle'],assignedTo:'de1',cover1:'de2',cover2:'de4',aiData:null},
+  {id:'dr4',name:'تنظيم برامج التدريب',desc:'تصميم وتنفيذ برامج التدريب السنوية والدورية للموظفين عبر LMS',category:'training',impact:'medium',weight:3,load:3,freq:4,time:480,reqSkills:['التدريب','تصميم البرامج','LMS'],assignedTo:'de4',cover1:'de2',cover2:'de1',aiData:null},
+  {id:'dr5',name:'إعداد تقارير الامتثال',desc:'إعداد تقارير GOSI الشهرية والربعية وتقارير الامتثال الحكومية',category:'compliance',impact:'high',weight:4,load:4,freq:3,time:240,reqSkills:['GOSI','التقارير','Excel'],assignedTo:'de3',cover1:'de1',cover2:'de2',aiData:null},
+  {id:'dr6',name:'إجراءات إنهاء الخدمة',desc:'معالجة تسوية مستحقات الموظفين المغادرين وإجراءات الإنهاء الرسمية',category:'offboarding',impact:'high',weight:3,load:3,freq:3,time:120,reqSkills:['Oracle','الاستحقاقات','الإجراءات القانونية'],assignedTo:'de1',cover1:'de3',cover2:'de2',aiData:null},
+];
+
+const DEMO_DIST = {
+  team_summary:'الفريق متوازن مع تخصصات تكميلية واضحة. محمد القحطاني يتولى المهام المالية الحرجة، وسارة الزهراني تبرع في إدارة الإجازات، بينما يوفر أحمد العمري مرونة في التغطية العامة، ونورة العتيبي متخصصة بالتدريب.',
+  load_analysis:[
+    {emp_id:'de1',load_pct:33,status:'balanced',comment:'عبء معتدل ومتوازن مع مرونة جيدة للتغطية'},
+    {emp_id:'de2',load_pct:17,status:'light',comment:'خفيف نسبياً — مناسب لدورها الإشرافي'},
+    {emp_id:'de3',load_pct:33,status:'balanced',comment:'يتحمل أثقل المسؤوليات المالية الحرجة'},
+    {emp_id:'de4',load_pct:17,status:'light',comment:'يتسع لمسؤوليات إضافية في التدريب'},
+  ],
+  overload_warnings:[],
+  suggestions:[
+    'تطوير مهارات نورة في Oracle HCM سيوسع قدرتها على التغطية بشكل كبير',
+    'يُنصح بتدريب متقاطع بين محمد وأحمد لضمان استمرارية معالجة الرواتب',
+    'مراجعة عبء محمد خلال فترات الرواتب الشهرية لتجنب الإرهاق',
+    'سارة مرشحة مستقبلاً لأدوار إشرافية أوسع بفضل خبرتها الممتدة',
+  ],
+  analysis:[
+    {resp_id:'dr1',owner_id:'de2',cover1_id:'de1',cover2_id:'de3',
+      rankings:[
+        {emp_id:'de2',rank:1,score:94,role:'Owner',reasons:['8 سنوات خبرة في الإجازات','تتقن Oracle HCM وECTS','تواصل ممتاز مع الموظفين'],warnings:[],fit_summary:'الأنسب بامتياز لهذه المسؤولية'},
+        {emp_id:'de1',rank:2,score:76,role:'Cover1',reasons:['يتقن Oracle HCM','دقيق ومنظم'],warnings:[],fit_summary:'بديل جيد بفضل إتقانه للأنظمة'},
+        {emp_id:'de3',rank:3,score:55,role:'Cover2',reasons:['خبرة في الأنظمة'],warnings:['ليست تخصصه الرئيسي'],fit_summary:'يمكنه التغطية عند الحاجة القصوى'},
+      ],recommendation:'سارة هي الخيار الأمثل بفضل تخصصها الدقيق وخبرتها الطويلة',risk_if_wrong:'تأخر في معالجة الطلبات وتأثير سلبي على رضا الموظفين'},
+    {resp_id:'dr2',owner_id:'de3',cover1_id:'de1',cover2_id:'de2',
+      rankings:[
+        {emp_id:'de3',rank:1,score:97,role:'Owner',reasons:['محاسب متخصص في الرواتب','يتقن Oracle وECTS وGOSI','دقة عالية في الأرقام الحرجة'],warnings:[],fit_summary:'الشخص الوحيد المناسب لهذه المهمة الحرجة'},
+        {emp_id:'de1',rank:2,score:68,role:'Cover1',reasons:['يعرف Oracle HCM وGOSI','دقيق'],warnings:['يحتاج تدريباً على ECTS'],fit_summary:'بديل مقبول مع تدريب مسبق'},
+        {emp_id:'de2',rank:3,score:41,role:'Cover2',reasons:['تعرف الأنظمة الأساسية'],warnings:['غير متخصصة في المحاسبة','مخاطرة عالية'],fit_summary:'خيار أخير عند الضرورة القصوى فقط'},
+      ],recommendation:'محمد المسؤول الحتمي مع ضرورة تأهيل بديل رئيسي عاجل',risk_if_wrong:'أخطاء في الرواتب ستؤثر على جميع الموظفين وقد تسبب مشاكل قانونية'},
+    {resp_id:'dr3',owner_id:'de1',cover1_id:'de2',cover2_id:'de4',
+      rankings:[
+        {emp_id:'de1',rank:1,score:82,role:'Owner',reasons:['خبرة في Oracle HCM','دقيق في التقييم','يفهم متطلبات الوظائف'],warnings:[],fit_summary:'الأنسب لعمليات الاستقطاب والتعيين'},
+        {emp_id:'de2',rank:2,score:74,role:'Cover1',reasons:['مهارات تواصل ممتازة','تجربة واسعة مع الموظفين'],warnings:[],fit_summary:'بديل ممتاز بفضل مهاراتها الاجتماعية'},
+        {emp_id:'de4',rank:3,score:63,role:'Cover2',reasons:['مهارات تواصل وتحفيز','حماس للعمل'],warnings:['خبرة محدودة في الاستقطاب'],fit_summary:'يمكنها المساعدة في بعض مراحل الاستقطاب'},
+      ],recommendation:'أحمد يملك الخلفية الأنسب مع إمكانية استثمار سارة في التواصل الأولي',risk_if_wrong:'تأخر في ملء الشواغر وتأثير على استمرارية العمل'},
+    {resp_id:'dr4',owner_id:'de4',cover1_id:'de2',cover2_id:'de1',
+      rankings:[
+        {emp_id:'de4',rank:1,score:96,role:'Owner',reasons:['متخصصة في التدريب','تتقن تصميم البرامج وLMS','طاقة إبداعية عالية'],warnings:[],fit_summary:'مصممة أصلاً لهذا الدور'},
+        {emp_id:'de2',rank:2,score:61,role:'Cover1',reasons:['خبرة في التعامل مع الموظفين','مهارات تواصل'],warnings:['غير متخصصة في تصميم البرامج'],fit_summary:'يمكنها إدارة التدريب التنفيذي الأساسي'},
+        {emp_id:'de1',rank:3,score:38,role:'Cover2',reasons:['معرفة بالأنظمة'],warnings:['ليس مجاله','سيؤثر على جودة التدريب'],fit_summary:'خيار أخير للضرورة القصوى فقط'},
+      ],recommendation:'نورة هي الخيار الوحيد الصحيح، لا توجد بدائل متكافئة',risk_if_wrong:'انخفاض جودة التدريب وعدم تحقيق أهداف تطوير الكفاءات'},
+    {resp_id:'dr5',owner_id:'de3',cover1_id:'de1',cover2_id:'de2',
+      rankings:[
+        {emp_id:'de3',rank:1,score:91,role:'Owner',reasons:['خبرة في GOSI والأنظمة المالية','دقة عالية','فهم متطلبات الامتثال الحكومي'],warnings:[],fit_summary:'الأنسب للتقارير الرسمية الحرجة'},
+        {emp_id:'de1',rank:2,score:72,role:'Cover1',reasons:['يعرف GOSI','قادر على إعداد التقارير'],warnings:[],fit_summary:'بديل جيد بفضل معرفته بالأنظمة'},
+        {emp_id:'de2',rank:3,score:48,role:'Cover2',reasons:['تعرف الأنظمة الأساسية'],warnings:['غير متخصصة في التقارير المالية'],fit_summary:'يمكنها إعداد التقارير الأساسية'},
+      ],recommendation:'محمد القحطاني هو الأنسب نظراً لتخصصه في الامتثال المالي',risk_if_wrong:'أخطاء في تقارير GOSI قد تسبب غرامات حكومية ومشاكل قانونية'},
+    {resp_id:'dr6',owner_id:'de1',cover1_id:'de3',cover2_id:'de2',
+      rankings:[
+        {emp_id:'de1',rank:1,score:80,role:'Owner',reasons:['يتقن Oracle HCM','فهم الإجراءات الحكومية','دقة في الوثائق الرسمية'],warnings:[],fit_summary:'الأنسب لإدارة ملفات إنهاء الخدمة'},
+        {emp_id:'de3',rank:2,score:70,role:'Cover1',reasons:['يفهم الاستحقاقات المالية','يعرف الأنظمة المطلوبة'],warnings:[],fit_summary:'بديل ممتاز بخلفيته المالية القوية'},
+        {emp_id:'de2',rank:3,score:52,role:'Cover2',reasons:['تجربة في التعامل مع الموظفين'],warnings:['تحتاج تدريباً على الاستحقاقات'],fit_summary:'يمكنها التغطية للجوانب الإدارية والتواصلية'},
+      ],recommendation:'أحمد الأنسب لإجراءات الإنهاء بفضل إتقانه Oracle وخبرته في الوثائق الرسمية',risk_if_wrong:'تأخر في تسوية المستحقات قد يسبب نزاعات قانونية مع الموظفين المغادرين'},
+  ]
+};
+
+function loadDemo() {
+  if (!confirm('سيتم تحميل بيانات فريق الموارد البشرية النموذجي وسيُحذف ما هو موجود. متابعة؟')) return;
+  demoMode = true;
+  employees = JSON.parse(JSON.stringify(DEMO_EMPS));
+  responsibilities = JSON.parse(JSON.stringify(DEMO_RESPS));
+  save();
+  document.getElementById('demo-indicator').classList.remove('hidden');
+  ['demo-banner-emp'].forEach(id => { const el=document.getElementById(id); if(el) el.classList.remove('hidden'); });
+  ['key-warn-emp'].forEach(id => { const el=document.getElementById(id); if(el) el.classList.add('hidden'); });
+  renderEmployees();
+  renderResponsibilities();
+  showPage('employees', document.querySelector('nav button'));
+  showAlert('emp-alert', '🎯 تم تحميل البيانات التجريبية — 4 أعضاء و6 مسؤوليات جاهزة!', 'success');
+}
+
+function exitDemo() {
+  demoMode = false;
+  document.getElementById('demo-indicator').classList.add('hidden');
+  ['demo-banner-emp'].forEach(id => { const el=document.getElementById(id); if(el) el.classList.add('hidden'); });
+  checkKeyBanners();
+}
 
 // ═══════════════════════════════════════════════
 //  NAV
@@ -346,10 +467,10 @@ function saveKey() {
   localStorage.setItem('ant_api_key', k);
   closeKeyModal();
   checkKeyBanners();
-  showAlert('emp-alert', 'تم حفظ مفتاح API', 'success');
+  showAlert('emp-alert', 'تم حفظ مفتاح API ✅', 'success');
 }
 function checkKeyBanners() {
-  const has = !!LS.key();
+  const has = !!LS.key() || demoMode;
   ['key-warn-emp'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('hidden', has);
@@ -357,9 +478,10 @@ function checkKeyBanners() {
 }
 
 // ═══════════════════════════════════════════════
-//  CLAUDE API
+//  CLAUDE API (with demo fallback)
 // ═══════════════════════════════════════════════
 async function callClaude(system, userMsg, maxTokens = 1200) {
+  if (demoMode) return await demoAiResponse(userMsg);
   const key = LS.key();
   if (!key) { openKeyModal(); throw new Error('no key'); }
   const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -385,6 +507,17 @@ async function callClaude(system, userMsg, maxTokens = 1200) {
   return data.content[0].text;
 }
 
+async function demoAiResponse(userMsg) {
+  await new Promise(r => setTimeout(r, 1200));
+  if (userMsg.includes('TEAM:') && userMsg.includes('RESPONSIBILITIES:')) {
+    return JSON.stringify(DEMO_DIST);
+  }
+  if (userMsg.toLowerCase().includes('employee') || userMsg.includes('Description:')) {
+    return JSON.stringify({personality_type:'ISTJ — المحقق (نتيجة تجريبية)',strengths:['دقة عالية','منظم','موثوق'],weaknesses:['صلابة أحياناً'],key_skills:['الأنظمة','التقارير','التنظيم','التواصل','الدقة'],soft_skills:['الموثوقية','الانضباط','الالتزام'],work_style:'منهجي يفضل العمل وفق إجراءات واضحة',best_for:['الإدارة','التقارير','الامتثال'],summary:'⭐ هذه نتيجة تجريبية. أضف مفتاح API للحصول على تحليل حقيقي.',confidence:75});
+  }
+  return JSON.stringify({weight:3,load:3,impact:'medium',complexity:'moderate',freq:10,time_minutes:30,category:'other',systems:['النظام الداخلي'],req_skills:['التنظيم','الدقة'],req_traits:['منهجي','دقيق'],sub_tasks:['التخطيط','التنفيذ','المتابعة'],kpi:'إتمام المهام في الوقت المحدد',risk:'تأخر في الإجراءات',summary:'⭐ نتيجة تجريبية. أضف مفتاح API للتحليل الحقيقي.'});
+}
+
 function parseJsonSafe(text) {
   try { return JSON.parse(text); } catch{}
   const m1 = text.match(/```json\s*([\s\S]*?)```/i);
@@ -406,7 +539,7 @@ function showAlert(id, msg, type = 'success') {
   const el = document.getElementById(id);
   if (!el) return;
   el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
-  setTimeout(() => el.innerHTML = '', 4500);
+  setTimeout(() => el.innerHTML = '', 5000);
 }
 
 // ═══════════════════════════════════════════════
@@ -452,8 +585,7 @@ function saveEmployee() {
   const name = document.getElementById('emp-name').value.trim();
   if (!name) { showAlert('emp-alert', 'يرجى إدخال اسم العضو', 'error'); return; }
   const emp = {
-    id: editingEmpId || uid(),
-    name,
+    id: editingEmpId || uid(), name,
     title:  document.getElementById('emp-title').value.trim(),
     dept:   document.getElementById('emp-dept').value.trim(),
     exp:    parseInt(document.getElementById('emp-exp').value) || 0,
@@ -484,7 +616,7 @@ function editEmployee(id) {
   editingEmpId = id; lastAiEmp = e.aiAnalysis || null;
   document.getElementById('emp-edit-banner').classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
-  if (document.querySelector('nav button:not(.active)')) showPage('employees', document.querySelector('nav button'));
+  showPage('employees', document.querySelector('nav button'));
 }
 
 function deleteEmployee(id) {
@@ -512,11 +644,13 @@ async function analyzeEmployee() {
     const r = parseJsonSafe(text);
     lastAiEmp = r;
     const box = document.getElementById('emp-ai-box');
+    const isDemo = demoMode;
     if (!r || r.error) {
       box.innerHTML = `<div class="ai-box"><p style="color:red">فشل التحليل. تحقق من مفتاح API.</p></div>`;
     } else {
-      box.innerHTML = `<div class="ai-box">
-        <h4>✨ نتيجة التحليل</h4>
+      box.innerHTML = `<div class="ai-box${isDemo?' demo-box':''}">` +
+        (isDemo ? '<p style="color:#92400e;font-size:.8rem;margin-bottom:.5rem">⭐ نتيجة تجريبية محاكاة — أضف مفتاح API للتحليل الحقيقي</p>' : '') +
+        `<h4>✨ نتيجة التحليل</h4>
         <p><strong>نوع الشخصية:</strong> ${r.personality_type||'—'}</p>
         <p><strong>نقاط القوة:</strong> ${(r.strengths||[]).map(s=>`<span class="tag">${s}</span>`).join('')}</p>
         <p><strong>المهارات الأساسية:</strong> ${(r.key_skills||[]).map(s=>`<span class="tag">${s}</span>`).join('')}</p>
@@ -576,8 +710,7 @@ function saveResponsibility() {
   if (!name) { showAlert('resp-alert', 'يرجى إدخال اسم المسؤولية', 'error'); return; }
   const sk = document.getElementById('resp-skills').value.trim();
   const resp = {
-    id:        editingRespId || uid(),
-    name,
+    id: editingRespId || uid(), name,
     desc:      document.getElementById('resp-desc').value.trim(),
     category:  document.getElementById('resp-cat').value,
     impact:    document.getElementById('resp-impact').value,
@@ -637,6 +770,7 @@ async function analyzeResponsibility() {
     const r = parseJsonSafe(text);
     lastAiResp = r;
     const box = document.getElementById('resp-ai-box');
+    const isDemo = demoMode;
     if (!r || r.error) {
       box.innerHTML = '<div class="ai-box"><p style="color:red">فشل التحليل.</p></div>';
     } else {
@@ -650,8 +784,9 @@ async function analyzeResponsibility() {
         document.getElementById('resp-cat').value = r.category;
       if (r.req_skills && r.req_skills.length)
         document.getElementById('resp-skills').value = r.req_skills.filter(s=>s!=='…').join(', ');
-      box.innerHTML = `<div class="ai-box">
-        <h4>✨ نتيجة التحليل (تم تعبئة الحقول تلقائياً)</h4>
+      box.innerHTML = `<div class="ai-box${isDemo?' demo-box':''}">`+
+        (isDemo ? '<p style="color:#92400e;font-size:.8rem;margin-bottom:.5rem">⭐ نتيجة تجريبية محاكاة</p>' : '') +
+        `<h4>✨ نتيجة التحليل (تم تعبئة الحقول تلقائياً)</h4>
         <p><strong>التعقيد:</strong> ${r.complexity||'—'} | <strong>المخاطر:</strong> ${r.risk||'—'}</p>
         <p><strong>المهام الفرعية:</strong> ${(r.sub_tasks||[]).filter(s=>s!=='…').map(s=>`<span class="tag">${s}</span>`).join('')}</p>
         <p><strong>KPI:</strong> ${r.kpi||'—'}</p>
@@ -693,9 +828,7 @@ async function runDistribute() {
       prompt, 4000
     );
     const result = parseJsonSafe(text);
-    if (!result) { showAlert('dist-alert', 'فشل تحليل الرد من AI — حاول مجدداً', 'error'); return; }
-
-    // Apply assignments
+    if (!result) { showAlert('dist-alert', 'فشل تحليل الرد — حاول مجدداً', 'error'); return; }
     (result.analysis||[]).forEach(item => {
       const r = responsibilities.find(r => r.id === item.resp_id);
       if (!r) return;
@@ -707,7 +840,8 @@ async function runDistribute() {
     save(); renderResponsibilities();
     renderDistResult(result);
     document.getElementById('dist-result').classList.remove('hidden');
-    showAlert('dist-alert', 'تم التوزيع بنجاح ✅', 'success');
+    const msg = demoMode ? '🎯 تم التوزيع التجريبي — هذه بيانات محاكاة' : 'تم التوزيع بنجاح ✅';
+    showAlert('dist-alert', msg, demoMode ? 'demo' : 'success');
   } catch(e) {
     showAlert('dist-alert', 'خطأ: ' + e.message, 'error');
   } finally {
@@ -716,7 +850,8 @@ async function runDistribute() {
 }
 
 function renderDistResult(result) {
-  document.getElementById('dist-team-summary').textContent = result.team_summary || '';
+  const demoNote = demoMode ? '<span class="badge badge-demo" style="margin-right:.5rem">تجريبي</span>' : '';
+  document.getElementById('dist-team-summary').innerHTML = demoNote + (result.team_summary || '');
 
   const loadEl = document.getElementById('dist-load');
   loadEl.innerHTML = (result.load_analysis||[]).map(la => {
@@ -768,7 +903,7 @@ function renderDistResult(result) {
 }
 
 // ═══════════════════════════════════════════════
-//  IMPORT / EXPORT (SheetJS)
+//  IMPORT / EXPORT
 // ═══════════════════════════════════════════════
 function downloadTemplate(type) {
   const wb = XLSX.utils.book_new();
@@ -782,9 +917,9 @@ function downloadTemplate(type) {
     XLSX.writeFile(wb, 'قالب_بيانات_الموظفين.xlsx');
   } else {
     const data = [
-      ['اسم المسؤولية *','الوصف التفصيلي','الفئة','مستوى التأثير','الوزن 1-5','العبء 1-5','التكرار/شهر','الوقت/مرة (دقيقة)','الأنظمة','المهارات المطلوبة','ملاحظات'],
-      ['معالجة طلبات الإجازة','40 طلب شهرياً / 15 دقيقة لكل طلب','إجازات وغياب','متوسط',3,2,40,15,'Oracle HCM','دقة, Oracle',''],
-      ['احتساب الرواتب','مرة شهرياً / 3 أيام عمل كاملة','رواتب واستحقاقات','حرج',5,5,1,1440,'Oracle, ECTS, GOSI','محاسبة, دقة',''],
+      ['اسم المسؤولية *','الوصف','الفئة','مستوى التأثير','الوزن 1-5','العبء 1-5','التكرار/شهر','الوقت/مرة (دق)','الأنظمة','المهارات','ملاحظات'],
+      ['معالجة طلبات الإجازة','40 طلب شهرياً','إجازات وغياب','متوسط',3,2,40,15,'Oracle HCM','دقة, Oracle',''],
+      ['احتساب الرواتب','مرة شهرياً / 3 أيام','رواتب واستحقاقات','حرج',5,5,1,1440,'Oracle, ECTS, GOSI','محاسبة',''],
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), 'المسؤوليات');
     XLSX.writeFile(wb, 'قالب_بيانات_المسؤوليات.xlsx');
@@ -795,27 +930,20 @@ function exportReport() {
   const wb = XLSX.utils.book_new();
   const empMap = Object.fromEntries(employees.map(e=>[e.id,e]));
   const total = responsibilities.length || 1;
-
-  // Sheet 1: Distribution
   const rows1 = [['المسؤولية','الفئة','التأثير','الوزن','العبء','صاحب المسؤولية','المغطي الرئيسي','المغطي الاحتياطي','ساعات/شهر']];
   responsibilities.forEach(r => {
     const hrs = r.freq && r.time ? Math.round(r.freq * r.time / 60 * 10) / 10 : '—';
-    rows1.push([
-      r.name, CATS_AR[r.category]||'أخرى', IMP_AR[r.impact]||'متوسط', r.weight||3, r.load||3,
-      empMap[r.assignedTo]?.name||'—', empMap[r.cover1]?.name||'—', empMap[r.cover2]?.name||'—', hrs
-    ]);
+    rows1.push([r.name, CATS_AR[r.category]||'أخرى', IMP_AR[r.impact]||'متوسط', r.weight||3, r.load||3,
+      empMap[r.assignedTo]?.name||'—', empMap[r.cover1]?.name||'—', empMap[r.cover2]?.name||'—', hrs]);
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows1), 'ملخص التوزيع');
-
-  // Sheet 2: Team load
-  const rows2 = [['الموظف','المسمى الوظيفي','مسؤولياته','% من الإجمالي','مغطي رئيسي','مغطي احتياطي','الحالة']];
+  const rows2 = [['الموظف','المسمى','مسؤولياته','% من الإجمالي','مغطي رئيسي','مغطي احتياطي','الحالة']];
   employees.forEach(emp => {
     const owned = responsibilities.filter(r=>r.assignedTo===emp.id).length;
-    const c1    = responsibilities.filter(r=>r.cover1===emp.id).length;
-    const c2    = responsibilities.filter(r=>r.cover2===emp.id).length;
-    const pct   = Math.round(owned/total*100*10)/10;
-    const st    = pct>60?'محمّل':pct<15?'خفيف':'متوازن';
-    rows2.push([emp.name, emp.title||'', owned, `${pct}%`, c1, c2, st]);
+    const c1 = responsibilities.filter(r=>r.cover1===emp.id).length;
+    const c2 = responsibilities.filter(r=>r.cover2===emp.id).length;
+    const pct = Math.round(owned/total*100*10)/10;
+    rows2.push([emp.name, emp.title||'', owned, `${pct}%`, c1, c2, pct>60?'محمّل':pct<15?'خفيف':'متوازن']);
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows2), 'أعباء الفريق');
   XLSX.writeFile(wb, 'تقرير_توزيع_المسؤوليات.xlsx');
@@ -838,17 +966,14 @@ function importFile(type) {
       const hi   = rows.findIndex((row,i) => i<8 && row.filter(Boolean).length >= 3);
       const headers = (rows[hi]||[]).map(c=>String(c||'').replace(/[*]/g,'').trim());
       let added = 0;
-
       function gv(row, ...keys) {
         for (const k of keys)
           for (let ci=0;ci<headers.length;ci++)
             if (headers[ci].includes(k) && ci<row.length && row[ci]) return String(row[ci]).trim();
         return '';
       }
-
       const CMAP={استقطاب:'onboarding',إنهاء:'offboarding',إجازات:'leave',رواتب:'payroll',امتثال:'compliance',تدريب:'training',أداء:'performance'};
       const IMAP={منخفض:'low',متوسط:'medium','عالٍ':'high',حرج:'critical'};
-
       for (let ri = hi+1; ri < rows.length; ri++) {
         const row = rows[ri];
         if (!row.some(Boolean)) continue;
@@ -861,7 +986,7 @@ function importFile(type) {
         } else {
           const name = gv(row,'اسم المسؤولية','الاسم');
           if (!name || name.length<2) continue;
-          const cat_r=gv(row,'الفئة'), imp_r=gv(row,'التأثير','مستوى'), sys_s=gv(row,'الأنظمة'), sk_s=gv(row,'المهارات');
+          const cat_r=gv(row,'الفئة'),imp_r=gv(row,'التأثير','مستوى'),sys_s=gv(row,'الأنظمة'),sk_s=gv(row,'المهارات');
           responsibilities.push({id:uid(),name,desc:gv(row,'الوصف'),
             category:Object.entries(CMAP).find(([k])=>cat_r.includes(k))?.[1]||'other',
             impact:Object.entries(IMAP).find(([k])=>imp_r.includes(k))?.[1]||'medium',
@@ -885,8 +1010,11 @@ function importFile(type) {
 
 function resetAll() {
   if (!confirm('سيتم حذف جميع بيانات الأعضاء والمسؤوليات. هل أنت متأكد؟')) return;
-  employees = []; responsibilities = [];
+  employees = []; responsibilities = []; demoMode = false;
   save(); renderEmployees(); renderResponsibilities();
+  document.getElementById('demo-indicator').classList.add('hidden');
+  ['demo-banner-emp'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});
+  checkKeyBanners();
   showAlert('emp-alert', 'تم حذف جميع البيانات');
 }
 
