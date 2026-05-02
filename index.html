@@ -22,6 +22,12 @@ main{max-width:1150px;margin:1.5rem auto;padding:0 1rem}
 .form-row{display:flex;flex-wrap:wrap;gap:.7rem;margin-bottom:.7rem}
 .form-row input,.form-row select,.form-row textarea{flex:1;min-width:150px;padding:.6rem .8rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:.9rem;font-family:Arial,sans-serif;transition:border .2s;background:#fafafa}
 .form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:#0f766e;background:#fff}
+.field-group{display:flex;flex-direction:column;flex:1;min-width:150px;gap:.25rem}
+.field-group input,.field-group select,.field-group textarea{flex:1;min-width:0;padding:.6rem .8rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:.9rem;font-family:Arial,sans-serif;transition:border .2s;background:#fafafa;width:100%}
+.field-group input:focus,.field-group select:focus,.field-group textarea:focus{outline:none;border-color:#0f766e;background:#fff}
+.field-group textarea{min-height:72px;resize:vertical}
+.field-label{font-size:.78rem;font-weight:700;color:#0f766e;margin-bottom:.1rem}
+.field-hint{font-size:.72rem;color:#94a3b8;margin-top:.15rem}
 textarea{min-height:72px;resize:vertical}
 .btn{padding:.55rem 1.2rem;border:none;border-radius:9px;cursor:pointer;font-size:.88rem;font-weight:700;transition:all .2s;font-family:Arial,sans-serif;display:inline-flex;align-items:center;gap:.4rem}
 .btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.15)}
@@ -155,14 +161,38 @@ tr:hover td{background:#f8fffe}
     <h2>➕ إضافة / تعديل عضو</h2>
     <div id="emp-edit-banner" class="alert alert-info hidden">وضع التعديل — عدّل البيانات ثم اضغط حفظ</div>
     <div class="form-row">
-      <input id="emp-name"  placeholder="الاسم الكامل *"/>
-      <input id="emp-title" placeholder="المسمى الوظيفي"/>
-      <input id="emp-dept"  placeholder="القسم / الفريق"/>
-      <input id="emp-exp"   placeholder="سنوات الخبرة" type="number" min="0" style="max-width:120px"/>
+      <div class="field-group" style="flex:2;min-width:180px">
+        <span class="field-label">الاسم الكامل *</span>
+        <input id="emp-name" placeholder="مثال: سارة المطيري"/>
+        <span class="field-hint">الاسم الثلاثي أو الرباعي كما في السجلات الرسمية</span>
+      </div>
+      <div class="field-group" style="flex:2;min-width:160px">
+        <span class="field-label">المسمى الوظيفي</span>
+        <input id="emp-title" placeholder="مثال: أخصائي موارد بشرية"/>
+        <span class="field-hint">الدور أو اللقب الوظيفي الحالي</span>
+      </div>
+      <div class="field-group" style="min-width:140px">
+        <span class="field-label">القسم / الفريق</span>
+        <input id="emp-dept" placeholder="مثال: HR، IT، المالية"/>
+        <span class="field-hint">القسم أو الوحدة التنظيمية</span>
+      </div>
+      <div class="field-group" style="max-width:130px;min-width:100px">
+        <span class="field-label">سنوات الخبرة</span>
+        <input id="emp-exp" type="number" min="0" placeholder="0"/>
+        <span class="field-hint">إجمالي سنوات العمل</span>
+      </div>
     </div>
     <div class="form-row">
-      <textarea id="emp-bio"    placeholder="وصف الشخصية والسلوك (اختياري)"></textarea>
-      <textarea id="emp-skills" placeholder="الخبرات والمهارات التقنية (اختياري)"></textarea>
+      <div class="field-group">
+        <span class="field-label">وصف الشخصية والسلوك</span>
+        <textarea id="emp-bio" placeholder="مثال: شخص منظّم ويُجيد التواصل مع الفرق، يعمل بشكل مستقل ويُنجز مهامه في الوقت المحدد..."></textarea>
+        <span class="field-hint">يساعد الذكاء الاصطناعي في فهم نمط عمل الشخص وتوجيه قرار التوزيع</span>
+      </div>
+      <div class="field-group">
+        <span class="field-label">الخبرات والمهارات التقنية</span>
+        <textarea id="emp-skills" placeholder="مثال: إدارة الرواتب، نظام SAP، التوظيف، التقارير، Excel..."></textarea>
+        <span class="field-hint">اذكر المهارات والأنظمة والتخصصات التي يمتلكها الموظف</span>
+      </div>
     </div>
     <div class="actions">
       <button class="btn btn-primary" onclick="saveEmployee()">💾 حفظ العضو</button>
@@ -191,36 +221,71 @@ tr:hover td{background:#f8fffe}
 <div id="page-responsibilities" class="page">
   <div class="card">
     <h2>➕ إضافة / تعديل مسؤولية</h2>
-    <div id="resp-edit-banner" class="alert alert-info hidden">وضع التعديل</div>
+    <div id="resp-edit-banner" class="alert alert-info hidden">وضع التعديل — عدّل البيانات ثم اضغط حفظ</div>
     <div class="form-row">
-      <input id="resp-name" placeholder="اسم المسؤولية *" style="flex:2"/>
-      <select id="resp-cat">
-        <option value="other">الفئة</option>
-        <option value="onboarding">استقطاب وتعيين</option>
-        <option value="offboarding">إنهاء خدمة</option>
-        <option value="leave">إجازات وغياب</option>
-        <option value="payroll">رواتب واستحقاقات</option>
-        <option value="compliance">امتثال وتقارير</option>
-        <option value="training">تدريب وتطوير</option>
-        <option value="performance">أداء وتقييم</option>
-      </select>
-      <select id="resp-impact">
-        <option value="medium">التأثير — متوسط</option>
-        <option value="low">منخفض</option>
-        <option value="medium">متوسط</option>
-        <option value="high">عالٍ</option>
-        <option value="critical">حرج</option>
-      </select>
+      <div class="field-group" style="flex:3;min-width:200px">
+        <span class="field-label">اسم المسؤولية *</span>
+        <input id="resp-name" placeholder="مثال: مراجعة كشوف الرواتب الشهرية"/>
+        <span class="field-hint">اسم واضح ومختصر يعبّر عن طبيعة المهمة</span>
+      </div>
+      <div class="field-group" style="min-width:160px">
+        <span class="field-label">الفئة / التصنيف</span>
+        <select id="resp-cat">
+          <option value="other">— اختر الفئة —</option>
+          <option value="onboarding">استقطاب وتعيين</option>
+          <option value="offboarding">إنهاء خدمة</option>
+          <option value="leave">إجازات وغياب</option>
+          <option value="payroll">رواتب واستحقاقات</option>
+          <option value="compliance">امتثال وتقارير</option>
+          <option value="training">تدريب وتطوير</option>
+          <option value="performance">أداء وتقييم</option>
+        </select>
+        <span class="field-hint">نوع العمل الذي تنتمي إليه المسؤولية</span>
+      </div>
+      <div class="field-group" style="min-width:150px">
+        <span class="field-label">مستوى التأثير</span>
+        <select id="resp-impact">
+          <option value="low">منخفض — تأثير محدود</option>
+          <option value="medium" selected>متوسط — تأثير معتدل</option>
+          <option value="high">عالٍ — تأثير كبير</option>
+          <option value="critical">حرج — توقفه يعطّل العمل</option>
+        </select>
+        <span class="field-hint">مدى تأثير هذه المسؤولية على سير العمل</span>
+      </div>
     </div>
     <div class="form-row">
-      <textarea id="resp-desc" placeholder="الوصف التفصيلي للمسؤولية"></textarea>
+      <div class="field-group">
+        <span class="field-label">الوصف التفصيلي</span>
+        <textarea id="resp-desc" placeholder="اشرح ما تتضمنه هذه المسؤولية من مهام وخطوات وتفاصيل تنفيذ..."></textarea>
+        <span class="field-hint">كلما كان الوصف أوضح، كان تحليل الذكاء الاصطناعي أدق في التوزيع</span>
+      </div>
     </div>
     <div class="form-row">
-      <input id="resp-weight" type="number" min="1" max="5" placeholder="الوزن 1-5" style="max-width:110px"/>
-      <input id="resp-load"   type="number" min="1" max="5" placeholder="العبء 1-5"  style="max-width:110px"/>
-      <input id="resp-freq"   type="number" min="0" placeholder="التكرار/شهر" style="max-width:120px"/>
-      <input id="resp-time"   type="number" min="0" placeholder="الوقت/مرة (دق)" style="max-width:130px"/>
-      <input id="resp-skills" placeholder="المهارات المطلوبة (بفاصلة)" style="flex:2"/>
+      <div class="field-group" style="max-width:140px;min-width:110px">
+        <span class="field-label">الوزن (1-5)</span>
+        <input id="resp-weight" type="number" min="1" max="5" placeholder="3"/>
+        <span class="field-hint">أهمية المسؤولية: 1 = أقل أهمية، 5 = الأكثر أهمية</span>
+      </div>
+      <div class="field-group" style="max-width:140px;min-width:110px">
+        <span class="field-label">العبء (1-5)</span>
+        <input id="resp-load" type="number" min="1" max="5" placeholder="3"/>
+        <span class="field-hint">مقدار الجهد المبذول: 1 = خفيف، 5 = ثقيل جداً</span>
+      </div>
+      <div class="field-group" style="max-width:150px;min-width:110px">
+        <span class="field-label">التكرار (مرة/شهر)</span>
+        <input id="resp-freq" type="number" min="0" placeholder="مثال: 4"/>
+        <span class="field-hint">عدد مرات تنفيذ المهمة شهرياً</span>
+      </div>
+      <div class="field-group" style="max-width:160px;min-width:120px">
+        <span class="field-label">الوقت (دقيقة/مرة)</span>
+        <input id="resp-time" type="number" min="0" placeholder="مثال: 60"/>
+        <span class="field-hint">متوسط الوقت المستغرق في كل مرة</span>
+      </div>
+      <div class="field-group" style="flex:2;min-width:180px">
+        <span class="field-label">المهارات المطلوبة</span>
+        <input id="resp-skills" placeholder="مثال: Excel، SAP، التواصل، التفاوض..."/>
+        <span class="field-hint">افصل بين المهارات بفاصلة — تُستخدم لمطابقة الموظف المناسب</span>
+      </div>
     </div>
     <div class="actions">
       <button class="btn btn-primary" onclick="saveResponsibility()">💾 حفظ المسؤولية</button>
@@ -748,6 +813,7 @@ function editResponsibility(id) {
   document.getElementById('resp-skills').value = (r.reqSkills||[]).join(', ');
   editingRespId = id; lastAiResp = r.aiData || null;
   document.getElementById('resp-edit-banner').classList.remove('hidden');
+  showPage('responsibilities', document.querySelectorAll('nav button')[1]);
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
