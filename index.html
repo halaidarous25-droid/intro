@@ -92,6 +92,13 @@ tr:hover td{background:#f8fffe}
 .overload-warn{background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:.65rem 1rem;font-size:.85rem;color:#9a3412;margin-bottom:.5rem}
 .demo-indicator{background:#f59e0b;color:#fff;border-radius:6px;padding:.15rem .55rem;font-size:.75rem;font-weight:700;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.cov-pills{display:flex;gap:.3rem;flex-wrap:wrap;align-items:center}
+.cov-pill{display:inline-flex;align-items:center;gap:.25rem;border-radius:99px;padding:.18rem .55rem;font-size:.75rem;font-weight:700;white-space:nowrap}
+.cov-assigned{background:#d1fae5;color:#065f46}
+.cov-primary{background:#dbeafe;color:#1e40af}
+.cov-backup{background:#f3e8ff;color:#6b21a8}
+.cov-zero{background:#f1f5f9;color:#94a3b8}
+.emp-cov-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.25rem}
 @media(max-width:600px){header h1{font-size:1.1rem}.btn{padding:.45rem .9rem;font-size:.82rem}th,td{padding:.5rem .6rem}}
 </style>
 </head>
@@ -211,7 +218,7 @@ tr:hover td{background:#f8fffe}
       <p>لا يوجد أعضاء بعد — اضغط <strong>"🎯 وضع تجريبي"</strong> لتحميل بيانات جاهزة</p>
     </div>
     <table id="emp-table-wrap">
-      <thead><tr><th>الاسم</th><th>المسمى</th><th>القسم</th><th>الخبرة</th><th>تحليل AI</th><th>إجراءات</th></tr></thead>
+      <thead><tr><th>الاسم</th><th>المسمى</th><th>القسم</th><th>الخبرة</th><th>التكليفات والتغطية</th><th>تحليل AI</th><th>إجراءات</th></tr></thead>
       <tbody id="emp-tbody"></tbody>
     </table>
   </div>
@@ -287,6 +294,29 @@ tr:hover td{background:#f8fffe}
         <span class="field-hint">افصل بين المهارات بفاصلة — تُستخدم لمطابقة الموظف المناسب</span>
       </div>
     </div>
+    <div class="form-row">
+      <div class="field-group">
+        <span class="field-label">👤 المسؤول الرئيسي</span>
+        <select id="resp-assigned">
+          <option value="">— لم يُحدَّد بعد —</option>
+        </select>
+        <span class="field-hint">الشخص المسؤول مباشرة عن تنفيذ هذه المهمة</span>
+      </div>
+      <div class="field-group">
+        <span class="field-label">🔵 المغطي الافتراضي</span>
+        <select id="resp-cover1">
+          <option value="">— لم يُحدَّد بعد —</option>
+        </select>
+        <span class="field-hint">يتولى المهمة عند غياب المسؤول الرئيسي (الخيار الأول)</span>
+      </div>
+      <div class="field-group">
+        <span class="field-label">🟣 المغطي الاحتياطي</span>
+        <select id="resp-cover2">
+          <option value="">— لم يُحدَّد بعد —</option>
+        </select>
+        <span class="field-hint">يتولى المهمة عند غياب الاثنين معاً (الخيار الاحتياطي)</span>
+      </div>
+    </div>
     <div class="actions">
       <button class="btn btn-primary" onclick="saveResponsibility()">💾 حفظ المسؤولية</button>
       <button class="btn btn-secondary" onclick="analyzeResponsibility()">✨ تحليل AI <span id="spin-resp" class="spinner hidden"></span></button>
@@ -303,7 +333,7 @@ tr:hover td{background:#f8fffe}
       <p>لا توجد مسؤوليات بعد</p>
     </div>
     <table id="resp-table-wrap">
-      <thead><tr><th>الاسم</th><th>الفئة</th><th>التأثير</th><th>الوزن</th><th>العبء</th><th>المسؤول</th><th>إجراءات</th></tr></thead>
+      <thead><tr><th>الاسم</th><th>الفئة</th><th>التأثير</th><th>الوزن</th><th>العبء</th><th>المسؤول / التغطية</th><th>إجراءات</th></tr></thead>
       <tbody id="resp-tbody"></tbody>
     </table>
   </div>
@@ -497,6 +527,7 @@ function loadDemo() {
   ['key-warn-emp'].forEach(id => { const el=document.getElementById(id); if(el) el.classList.add('hidden'); });
   renderEmployees();
   renderResponsibilities();
+  populateEmpSelects();
   showPage('employees', document.querySelector('nav button'));
   showAlert('emp-alert', '🎯 تم تحميل البيانات التجريبية — 4 أعضاء و6 مسؤوليات جاهزة!', 'success');
 }
@@ -625,18 +656,34 @@ function renderEmployees() {
     <div class="stat-card"><div class="num">${employees.length}</div><div class="lbl">إجمالي الأعضاء</div></div>
     <div class="stat-card" style="background:linear-gradient(135deg,#6366f1,#4f46e5)"><div class="num">${analyzed}</div><div class="lbl">محللون بالذكاء الاصطناعي</div></div>
     <div class="stat-card" style="background:linear-gradient(135deg,#0891b2,#0e7490)"><div class="num">${responsibilities.filter(r=>r.assignedTo).length}</div><div class="lbl">مسؤوليات موزعة</div></div>`;
-  tbody.innerHTML = employees.map(e => `
-    <tr>
+  const total = responsibilities.length;
+  tbody.innerHTML = employees.map(e => {
+    const assigned = responsibilities.filter(r => r.assignedTo === e.id).length;
+    const cover1   = responsibilities.filter(r => r.cover1 === e.id).length;
+    const cover2   = responsibilities.filter(r => r.cover2 === e.id).length;
+    const totalCov = assigned + cover1 + cover2;
+    const pct = total > 0 ? Math.round(totalCov / total * 100) : 0;
+    const covHtml = totalCov === 0
+      ? '<span class="cov-pill cov-zero">لا تكليفات</span>'
+      : `<span class="cov-pill cov-assigned" title="مسؤول مباشر">🎯 ${assigned}</span>` +
+        (cover1 ? `<span class="cov-pill cov-primary" title="مغطي افتراضي">🔵 ${cover1}</span>` : '') +
+        (cover2 ? `<span class="cov-pill cov-backup" title="مغطي احتياطي">🟣 ${cover2}</span>` : '');
+    return `<tr>
       <td style="font-weight:600"><span class="dot" style="background:${e.color}"></span>${e.name}</td>
       <td>${e.title||'—'}</td>
       <td>${e.dept||'—'}</td>
       <td>${e.exp||0} سنة</td>
+      <td>
+        <div class="cov-pills">${covHtml}</div>
+        ${totalCov > 0 ? `<div style="font-size:.72rem;color:#64748b;margin-top:.2rem">تغطية ${pct}% من المسؤوليات</div>` : ''}
+      </td>
       <td>${e.aiAnalysis ? '<span class="badge badge-ok">✓ محلل</span>' : '<span style="color:#94a3b8;font-size:.8rem">—</span>'}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-outline btn-sm" onclick="editEmployee('${e.id}')">تعديل</button>
         <button class="btn btn-danger btn-sm" style="margin-right:.3rem" onclick="deleteEmployee('${e.id}')">حذف</button>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 function clearEmpForm() {
@@ -667,7 +714,7 @@ function saveEmployee() {
     employees.push(emp);
     showAlert('emp-alert', 'تمت إضافة العضو بنجاح');
   }
-  save(); clearEmpForm(); renderEmployees();
+  save(); clearEmpForm(); renderEmployees(); populateEmpSelects();
 }
 
 function editEmployee(id) {
@@ -692,7 +739,7 @@ function deleteEmployee(id) {
     if (r.cover1 === id) r.cover1 = null;
     if (r.cover2 === id) r.cover2 = null;
   });
-  save(); renderEmployees();
+  save(); renderEmployees(); populateEmpSelects();
 }
 
 async function analyzeEmployee() {
@@ -736,6 +783,18 @@ async function analyzeEmployee() {
 // ═══════════════════════════════════════════════
 //  RESPONSIBILITIES
 // ═══════════════════════════════════════════════
+function populateEmpSelects() {
+  const opts = '<option value="">— لم يُحدَّد بعد —</option>' +
+    employees.map(e => `<option value="${e.id}">${e.name}${e.title ? ' — ' + e.title : ''}</option>`).join('');
+  ['resp-assigned','resp-cover1','resp-cover2'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = opts;
+    if (cur) sel.value = cur;
+  });
+}
+
 function renderResponsibilities() {
   const tbody = document.getElementById('resp-tbody');
   const empty = document.getElementById('resp-empty');
@@ -745,26 +804,44 @@ function renderResponsibilities() {
   }
   empty.classList.add('hidden'); tbl.style.display = '';
   tbody.innerHTML = responsibilities.map(r => {
-    const owner = employees.find(e => e.id === r.assignedTo);
+    const owner  = employees.find(e => e.id === r.assignedTo);
+    const cov1   = employees.find(e => e.id === r.cover1);
+    const cov2   = employees.find(e => e.id === r.cover2);
+    const empDot = (emp, label) => emp
+      ? `<div style="font-size:.78rem;white-space:nowrap"><span class="dot" style="background:${emp.color}"></span>${emp.name}</div>`
+      : `<div style="font-size:.78rem;color:#94a3b8">${label}: —</div>`;
     return `<tr>
       <td style="font-weight:600">${r.name}</td>
       <td>${CATS_AR[r.category]||'أخرى'}</td>
       <td><span class="badge ${IMP_CLS[r.impact]||'badge-medium'}">${IMP_AR[r.impact]||'متوسط'}</span></td>
       <td style="text-align:center">${r.weight||3}</td>
       <td style="text-align:center">${r.load||3}</td>
-      <td>${owner ? `<span class="dot" style="background:${owner.color}"></span>${owner.name}` : '<span style="color:#94a3b8">—</span>'}</td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:.15rem">
+          <div style="font-size:.72rem;font-weight:700;color:#64748b;margin-bottom:.1rem">🎯 مسؤول</div>
+          ${empDot(owner,'مسؤول')}
+          <div style="font-size:.72rem;font-weight:700;color:#1e40af;margin-top:.2rem">🔵 افتراضي</div>
+          ${empDot(cov1,'مغطي افتراضي')}
+          <div style="font-size:.72rem;font-weight:700;color:#6b21a8;margin-top:.2rem">🟣 احتياطي</div>
+          ${empDot(cov2,'مغطي احتياطي')}
+        </div>
+      </td>
       <td style="white-space:nowrap">
         <button class="btn btn-outline btn-sm" onclick="editResponsibility('${r.id}')">تعديل</button>
         <button class="btn btn-danger btn-sm" style="margin-right:.3rem" onclick="deleteResponsibility('${r.id}')">حذف</button>
       </td>
     </tr>`;
   }).join('');
+  populateEmpSelects();
 }
 
 function clearRespForm() {
   ['resp-name','resp-desc','resp-weight','resp-load','resp-freq','resp-time','resp-skills'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('resp-cat').value = 'other';
+  document.getElementById('resp-cat').value    = 'other';
   document.getElementById('resp-impact').value = 'medium';
+  document.getElementById('resp-assigned').value = '';
+  document.getElementById('resp-cover1').value   = '';
+  document.getElementById('resp-cover2').value   = '';
   editingRespId = null; lastAiResp = null;
   document.getElementById('resp-ai-box').classList.add('hidden');
   document.getElementById('resp-edit-banner').classList.add('hidden');
@@ -784,9 +861,9 @@ function saveResponsibility() {
     freq:      parseInt(document.getElementById('resp-freq').value)   || null,
     time:      parseInt(document.getElementById('resp-time').value)   || null,
     reqSkills: sk ? sk.split(',').map(s=>s.trim()).filter(Boolean) : [],
-    assignedTo: editingRespId ? (responsibilities.find(r=>r.id===editingRespId)||{}).assignedTo : null,
-    cover1:     editingRespId ? (responsibilities.find(r=>r.id===editingRespId)||{}).cover1 : null,
-    cover2:     editingRespId ? (responsibilities.find(r=>r.id===editingRespId)||{}).cover2 : null,
+    assignedTo: document.getElementById('resp-assigned').value || null,
+    cover1:     document.getElementById('resp-cover1').value   || null,
+    cover2:     document.getElementById('resp-cover2').value   || null,
     aiData:    lastAiResp || (editingRespId ? (responsibilities.find(r=>r.id===editingRespId)||{}).aiData : null)
   };
   if (editingRespId) {
@@ -802,15 +879,19 @@ function saveResponsibility() {
 
 function editResponsibility(id) {
   const r = responsibilities.find(x => x.id === id); if (!r) return;
-  document.getElementById('resp-name').value   = r.name   || '';
-  document.getElementById('resp-desc').value   = r.desc   || '';
-  document.getElementById('resp-cat').value    = r.category || 'other';
-  document.getElementById('resp-impact').value = r.impact  || 'medium';
-  document.getElementById('resp-weight').value = r.weight  || '';
-  document.getElementById('resp-load').value   = r.load    || '';
-  document.getElementById('resp-freq').value   = r.freq    || '';
-  document.getElementById('resp-time').value   = r.time    || '';
-  document.getElementById('resp-skills').value = (r.reqSkills||[]).join(', ');
+  document.getElementById('resp-name').value     = r.name   || '';
+  document.getElementById('resp-desc').value     = r.desc   || '';
+  document.getElementById('resp-cat').value      = r.category || 'other';
+  document.getElementById('resp-impact').value   = r.impact  || 'medium';
+  document.getElementById('resp-weight').value   = r.weight  || '';
+  document.getElementById('resp-load').value     = r.load    || '';
+  document.getElementById('resp-freq').value     = r.freq    || '';
+  document.getElementById('resp-time').value     = r.time    || '';
+  document.getElementById('resp-skills').value   = (r.reqSkills||[]).join(', ');
+  populateEmpSelects();
+  document.getElementById('resp-assigned').value = r.assignedTo || '';
+  document.getElementById('resp-cover1').value   = r.cover1     || '';
+  document.getElementById('resp-cover2').value   = r.cover2     || '';
   editingRespId = id; lastAiResp = r.aiData || null;
   document.getElementById('resp-edit-banner').classList.remove('hidden');
   showPage('responsibilities', document.querySelectorAll('nav button')[1]);
@@ -1090,6 +1171,7 @@ function resetAll() {
 checkKeyBanners();
 renderEmployees();
 renderResponsibilities();
+populateEmpSelects();
 </script>
 </body>
 </html>
