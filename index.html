@@ -619,7 +619,45 @@ async function callClaude(system, userMsg, maxTokens = 1200) {
 async function demoAiResponse(userMsg) {
   await new Promise(r => setTimeout(r, 1200));
   if (userMsg.includes('TEAM:') && userMsg.includes('RESPONSIBILITIES:')) {
-    return JSON.stringify(DEMO_DIST);
+    // Parse the ACTUAL IDs from the prompt so results always match current data
+    const teamPart = userMsg.split('RESPONSIBILITIES:')[0] || '';
+    const respPart = userMsg.split('RESPONSIBILITIES:')[1] || '';
+    const empIds  = [...teamPart.matchAll(/\bID:(\S+?)\s*\|/g)].map(m => m[1]).filter(Boolean);
+    const respIds = [...respPart.matchAll(/\bID:(\S+?)\s*\|/g)].map(m => m[1]).filter(Boolean);
+
+    if (!empIds.length || !respIds.length) return JSON.stringify(DEMO_DIST);
+
+    const n = empIds.length;
+    const loadTicks = Object.fromEntries(empIds.map(id => [id, 0]));
+
+    const analysis = respIds.map((rid, ri) => {
+      const o  = empIds[ri % n];
+      const c1 = n > 1 ? empIds[(ri + 1) % n] : null;
+      const c2 = n > 2 ? empIds[(ri + 2) % n] : (n > 1 ? empIds[0] : null);
+      loadTicks[o]  = (loadTicks[o]  || 0) + 3;
+      if (c1) loadTicks[c1] = (loadTicks[c1] || 0) + 1;
+      if (c2 && c2 !== o && c2 !== c1) loadTicks[c2] = (loadTicks[c2] || 0) + 1;
+      const rankings = [
+        {emp_id:o,  rank:1, score:88, role:'Owner',  reasons:['ملاءمة عالية للمهمة','خبرة كافية'], warnings:[], fit_summary:'الأنسب لهذه المسؤولية'},
+      ];
+      if (c1) rankings.push({emp_id:c1, rank:2, score:70, role:'Cover1', reasons:['قادر على التغطية'], warnings:[], fit_summary:'بديل جيد'});
+      if (c2 && c2 !== o && c2 !== c1) rankings.push({emp_id:c2, rank:3, score:55, role:'Cover2', reasons:['خيار احتياطي مناسب'], warnings:[], fit_summary:'يمكنه التغطية عند الحاجة'});
+      return {resp_id:rid, owner_id:o, cover1_id:c1||null, cover2_id:(c2&&c2!==o&&c2!==c1?c2:null),
+        rankings, recommendation:'⭐ نتيجة تجريبية — أضف مفتاح API للتوزيع الذكي الدقيق', risk_if_wrong:'راجع التوزيع يدوياً وعدّله حسب الحاجة'};
+    });
+
+    const totalTicks = Math.max(Object.values(loadTicks).reduce((a,b)=>a+b,0), 1);
+    const load_analysis = empIds.map(id => {
+      const pct = Math.round((loadTicks[id]||0) / totalTicks * 100);
+      return {emp_id:id, load_pct:pct, status: pct>50?'overloaded':pct<10?'light':'balanced', comment:'⭐ نتيجة تجريبية'};
+    });
+
+    return JSON.stringify({
+      team_summary: '⭐ هذا توزيع تجريبي مُحاكى بالتوزيع الدوري. أضف مفتاح API للحصول على توزيع ذكي يراعي مهارات كل موظف ومتطلبات كل مسؤولية.',
+      load_analysis, overload_warnings: [],
+      suggestions: ['أضف مفتاح API للذكاء الاصطناعي الحقيقي', 'أضف مهارات وأوصاف تفصيلية لكل موظف ومسؤولية لتحليل أدق'],
+      analysis
+    });
   }
   if (userMsg.toLowerCase().includes('employee') || userMsg.includes('Description:')) {
     return JSON.stringify({personality_type:'ISTJ — المحقق (نتيجة تجريبية)',strengths:['دقة عالية','منظم','موثوق'],weaknesses:['صلابة أحياناً'],key_skills:['الأنظمة','التقارير','التنظيم','التواصل','الدقة'],soft_skills:['الموثوقية','الانضباط','الالتزام'],work_style:'منهجي يفضل العمل وفق إجراءات واضحة',best_for:['الإدارة','التقارير','الامتثال'],summary:'⭐ هذه نتيجة تجريبية. أضف مفتاح API للحصول على تحليل حقيقي.',confidence:75});
@@ -981,8 +1019,8 @@ async function runDistribute() {
 
   try {
     const text = await callClaude(
-      'You are an expert HR specialist. Return ONLY valid JSON. Use EXACT employee and responsibility IDs provided.',
-      prompt, 4000
+      'You are an expert HR specialist. Return ONLY valid JSON, no explanation, no markdown. Use the EXACT IDs provided — do NOT invent or shorten any ID.',
+      prompt, 6000
     );
     const result = parseJsonSafe(text);
     if (!result) { showAlert('dist-alert', 'فشل تحليل الرد — حاول مجدداً', 'error'); return; }
@@ -1008,44 +1046,83 @@ async function runDistribute() {
   }
 }
 
+function resolveEmp(idOrIdx) {
+  // Try exact ID match first, then index fallback
+  return employees.find(e => e.id === idOrIdx) || employees[parseInt(idOrIdx)] || null;
+}
+function resolveResp(idOrIdx) {
+  return responsibilities.find(r => r.id === idOrIdx) || responsibilities[parseInt(idOrIdx)] || null;
+}
+
 function renderDistResult(result) {
   const demoNote = demoMode ? '<span class="badge badge-demo" style="margin-right:.5rem">تجريبي</span>' : '';
   document.getElementById('dist-team-summary').innerHTML = demoNote + (result.team_summary || '');
 
+  // ── Load bars ──
   const loadEl = document.getElementById('dist-load');
-  loadEl.innerHTML = (result.load_analysis||[]).map(la => {
-    const emp = employees.find(e => e.id === la.emp_id);
-    const pct = Math.min(la.load_pct||0, 100);
+  const loadData = result.load_analysis || [];
+
+  // If API returned load data, use it; otherwise compute from assignments
+  const effectiveLoad = loadData.length ? loadData : employees.map(e => {
+    const assigned = responsibilities.filter(r => r.assignedTo === e.id).length;
+    const c1 = responsibilities.filter(r => r.cover1 === e.id).length;
+    const c2 = responsibilities.filter(r => r.cover2 === e.id).length;
+    const total = responsibilities.length || 1;
+    const pct = Math.round((assigned * 3 + c1 * 1 + c2 * 0.5) / (total * 3) * 100);
+    return {emp_id: e.id, load_pct: Math.min(pct, 100), status: pct > 60 ? 'overloaded' : 'balanced', comment: ''};
+  });
+
+  loadEl.innerHTML = effectiveLoad.map(la => {
+    const emp = resolveEmp(la.emp_id);
+    if (!emp) return '';
+    const pct = Math.min(la.load_pct || 0, 100);
     const clr = pct > 60 ? '#ef4444' : pct < 15 ? '#3b82f6' : '#0f766e';
     return `<div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.7rem;flex-wrap:wrap">
-      <span style="min-width:140px;font-size:.88rem;font-weight:600">${emp?`<span class="dot" style="background:${emp.color}"></span>${emp.name}`:la.emp_id}</span>
+      <span style="min-width:145px;font-size:.88rem;font-weight:600"><span class="dot" style="background:${emp.color}"></span>${emp.name}</span>
       <div class="load-wrap"><div class="load-bar" style="width:${pct}%;background:${clr}"></div></div>
       <span style="min-width:44px;font-size:.85rem;font-weight:700;color:${clr}">${pct}%</span>
       <span style="font-size:.8rem;color:#64748b">${la.comment||''}</span>
     </div>`;
   }).join('');
 
-  const warns = result.overload_warnings||[];
+  // ── Warnings ──
+  const warns = result.overload_warnings || [];
   const wc = document.getElementById('dist-warn-card');
   if (warns.length) {
     wc.classList.remove('hidden');
     document.getElementById('dist-warns').innerHTML = warns.map(w=>`<div class="overload-warn">⚠️ ${w}</div>`).join('');
   } else wc.classList.add('hidden');
 
-  document.getElementById('dist-analysis').innerHTML = (result.analysis||[]).map(item => {
-    const resp = responsibilities.find(r => r.id === item.resp_id);
+  // ── Per-responsibility analysis ──
+  const roleLabels = ['👤 المسؤول الرئيسي','🔵 المغطي الافتراضي','🟣 المغطي الاحتياطي'];
+  const roleBg     = ['#d1fae5','#dbeafe','#f3e8ff'];
+  const roleClr    = ['#065f46','#1e40af','#6b21a8'];
+
+  // Use analysis array if present, otherwise build one from saved assignments
+  const analysisItems = (result.analysis||[]).length
+    ? result.analysis
+    : responsibilities.map(r => ({
+        resp_id: r.id,
+        owner_id:   r.assignedTo,
+        cover1_id:  r.cover1,
+        cover2_id:  r.cover2,
+        rankings: [r.assignedTo, r.cover1, r.cover2].filter(Boolean).map((id,i) => ({emp_id:id, rank:i+1, score:[88,70,55][i], role:['Owner','Cover1','Cover2'][i], reasons:[], warnings:[], fit_summary:''})),
+        recommendation: '', risk_if_wrong: ''
+      }));
+
+  document.getElementById('dist-analysis').innerHTML = analysisItems.map(item => {
+    const resp  = resolveResp(item.resp_id);
     const ranks = (item.rankings||[]).slice(0,3);
-    const roles = ['صاحب المسؤولية','المغطي الرئيسي','المغطي الاحتياطي'];
     return `<div class="dist-card">
-      <h4>📌 ${resp?resp.name:item.resp_id}</h4>
+      <h4>📌 ${resp ? resp.name : (item.resp_id||'—')}</h4>
       <p style="font-size:.82rem;color:#64748b;margin-bottom:.6rem">${item.recommendation||''}</p>
       ${ranks.map((rk,i) => {
-        const emp = employees.find(e => e.id === rk.emp_id);
+        const emp = resolveEmp(rk.emp_id);
+        if (!emp) return '';
         return `<div class="ranking-row">
           <div class="rank-badge rank-${i+1}">${i+1}</div>
-          ${emp?`<span class="dot" style="background:${emp.color}"></span>`:''}
-          <strong style="min-width:120px">${emp?emp.name:rk.emp_id}</strong>
-          <span style="color:#64748b;font-size:.81rem;flex:1">${roles[i]||''}</span>
+          <span style="display:inline-flex;align-items:center;gap:.25rem;background:${roleBg[i]};color:${roleClr[i]};border-radius:99px;padding:.15rem .6rem;font-size:.8rem;font-weight:600;min-width:120px">${emp.name}</span>
+          <span style="color:#64748b;font-size:.81rem;flex:1">${roleLabels[i]}</span>
           <span style="font-size:.82rem;font-weight:700;color:#0f766e">${rk.score||0}%</span>
         </div>`;
       }).join('')}
@@ -1053,6 +1130,7 @@ function renderDistResult(result) {
     </div>`;
   }).join('');
 
+  // ── Suggestions ──
   const sug = result.suggestions||[];
   const sc = document.getElementById('dist-sug-card');
   if (sug.length) {
