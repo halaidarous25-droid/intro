@@ -327,13 +327,19 @@ tr:hover td{background:#f8fffe}
 
   <div class="card">
     <h2>📋 قائمة المسؤوليات</h2>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:.8rem;align-items:center;font-size:.78rem">
+      <span style="color:#64748b">دليل الألوان:</span>
+      <span style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:99px;padding:.1rem .55rem;font-weight:600">مسؤول رئيسي</span>
+      <span style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;border-radius:99px;padding:.1rem .55rem;font-weight:600">مغطي افتراضي</span>
+      <span style="background:#f3e8ff;color:#6b21a8;border:1px solid #c4b5fd;border-radius:99px;padding:.1rem .55rem;font-weight:600">مغطي احتياطي</span>
+    </div>
     <div id="resp-alert"></div>
     <div id="resp-empty" class="empty-state hidden">
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 13h4"/></svg>
       <p>لا توجد مسؤوليات بعد</p>
     </div>
     <table id="resp-table-wrap">
-      <thead><tr><th>الاسم</th><th>الفئة</th><th>التأثير</th><th>الوزن</th><th>العبء</th><th>المسؤول / التغطية</th><th>إجراءات</th></tr></thead>
+      <thead><tr><th>الاسم</th><th>الفئة</th><th>التأثير</th><th>الوزن</th><th>العبء</th><th>التوزيع</th><th>إجراءات</th></tr></thead>
       <tbody id="resp-tbody"></tbody>
     </table>
   </div>
@@ -370,6 +376,13 @@ tr:hover td{background:#f8fffe}
     <div id="dist-sug-card" class="card hidden">
       <h2>💡 توصيات</h2>
       <ul id="dist-suggestions" style="padding-right:1.4rem;line-height:2.1;color:#334155;font-size:.9rem"></ul>
+    </div>
+    <div class="card" style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border-color:#a7f3d0">
+      <h2 style="color:#065f46">✏️ تعديل التوزيع يدوياً</h2>
+      <p style="color:#374151;font-size:.9rem;margin-bottom:1rem">يمكنك مراجعة كل مسؤولية وتغيير المسؤول أو المغطين حسب رأيك — الذكاء الاصطناعي يقترح فقط والقرار النهائي لك.</p>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="showPage('responsibilities', document.querySelectorAll('nav button')[1])">📋 اذهب إلى المسؤوليات للتعديل</button>
+      </div>
     </div>
   </div>
 </div>
@@ -807,9 +820,9 @@ function renderResponsibilities() {
     const owner  = employees.find(e => e.id === r.assignedTo);
     const cov1   = employees.find(e => e.id === r.cover1);
     const cov2   = employees.find(e => e.id === r.cover2);
-    const empDot = (emp, label) => emp
-      ? `<div style="font-size:.78rem;white-space:nowrap"><span class="dot" style="background:${emp.color}"></span>${emp.name}</div>`
-      : `<div style="font-size:.78rem;color:#94a3b8">${label}: —</div>`;
+    const rolePill = (emp, bg, color, border) => emp
+      ? `<span style="display:inline-flex;align-items:center;gap:.25rem;background:${bg};color:${color};border:1px solid ${border};border-radius:99px;padding:.18rem .65rem;font-size:.78rem;font-weight:600;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis"><span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></span>${emp.name}</span>`
+      : `<span style="color:#cbd5e1;font-size:.78rem">—</span>`;
     return `<tr>
       <td style="font-weight:600">${r.name}</td>
       <td>${CATS_AR[r.category]||'أخرى'}</td>
@@ -817,13 +830,10 @@ function renderResponsibilities() {
       <td style="text-align:center">${r.weight||3}</td>
       <td style="text-align:center">${r.load||3}</td>
       <td>
-        <div style="display:flex;flex-direction:column;gap:.15rem">
-          <div style="font-size:.72rem;font-weight:700;color:#64748b;margin-bottom:.1rem">🎯 مسؤول</div>
-          ${empDot(owner,'مسؤول')}
-          <div style="font-size:.72rem;font-weight:700;color:#1e40af;margin-top:.2rem">🔵 افتراضي</div>
-          ${empDot(cov1,'مغطي افتراضي')}
-          <div style="font-size:.72rem;font-weight:700;color:#6b21a8;margin-top:.2rem">🟣 احتياطي</div>
-          ${empDot(cov2,'مغطي احتياطي')}
+        <div style="display:flex;flex-direction:column;gap:.3rem;align-items:flex-start">
+          ${rolePill(owner,'#d1fae5','#065f46','#6ee7b7')}
+          ${rolePill(cov1, '#dbeafe','#1e40af','#93c5fd')}
+          ${rolePill(cov2, '#f3e8ff','#6b21a8','#c4b5fd')}
         </div>
       </td>
       <td style="white-space:nowrap">
@@ -984,10 +994,12 @@ async function runDistribute() {
       r.cover1     = item.cover1_id || (rnk[1]||{}).emp_id || null;
       r.cover2     = item.cover2_id || (rnk[2]||{}).emp_id || null;
     });
-    save(); renderResponsibilities();
+    save(); renderResponsibilities(); renderEmployees();
     renderDistResult(result);
     document.getElementById('dist-result').classList.remove('hidden');
-    const msg = demoMode ? '🎯 تم التوزيع التجريبي — هذه بيانات محاكاة' : 'تم التوزيع بنجاح ✅';
+    const msg = demoMode
+      ? '🎯 تم التوزيع التجريبي — يمكنك الآن تعديل التوزيع يدوياً من تبويب المسؤوليات'
+      : 'تم التوزيع بنجاح ✅ — يمكنك تعديل أي تعيين من تبويب المسؤوليات';
     showAlert('dist-alert', msg, demoMode ? 'demo' : 'success');
   } catch(e) {
     showAlert('dist-alert', 'خطأ: ' + e.message, 'error');
