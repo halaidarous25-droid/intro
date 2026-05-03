@@ -90,6 +90,20 @@ tr:hover td{background:#f8fffe}
 .empty-state{text-align:center;padding:2.5rem;color:#94a3b8}
 .empty-state svg{margin-bottom:.75rem;opacity:.4}
 .overload-warn{background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:.65rem 1rem;font-size:.85rem;color:#9a3412;margin-bottom:.5rem}
+.emp-group{border-radius:14px;margin-bottom:1.1rem;overflow:hidden;border:1.5px solid #e2e8f0}
+.emp-group-header{display:flex;align-items:center;gap:.75rem;padding:.85rem 1.1rem;flex-wrap:wrap}
+.emp-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1rem;flex-shrink:0}
+.emp-group-meta{flex:1;min-width:130px}
+.emp-group-meta .emp-nm{font-weight:700;font-size:.95rem;line-height:1.2}
+.emp-group-meta .emp-sub{font-size:.75rem;color:#64748b;margin-top:.1rem}
+.emp-load-wrap{display:flex;align-items:center;gap:.45rem;min-width:160px}
+.emp-resp-list{padding:.1rem .5rem .6rem}
+.emp-resp-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:.5rem;padding:.55rem .6rem;border-radius:9px;margin-bottom:.3rem;background:#f8fafc}
+.emp-resp-row:last-child{margin-bottom:0}
+.emp-resp-name{font-weight:600;font-size:.86rem;color:#1e293b}
+.emp-resp-covers{display:flex;gap:.3rem;flex-wrap:wrap;justify-content:flex-end}
+.cover-tag{display:inline-flex;align-items:center;gap:.2rem;border-radius:6px;padding:.12rem .5rem;font-size:.74rem;font-weight:600;white-space:nowrap}
+.emp-no-resp{padding:.75rem .6rem;color:#94a3b8;font-size:.83rem;font-style:italic}
 .demo-indicator{background:#f59e0b;color:#fff;border-radius:6px;padding:.15rem .55rem;font-size:.75rem;font-weight:700;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
 .cov-pills{display:flex;gap:.3rem;flex-wrap:wrap;align-items:center}
@@ -361,16 +375,12 @@ tr:hover td{background:#f8fffe}
       <h2>📊 ملخص الفريق</h2>
       <p id="dist-team-summary" style="color:#334155;line-height:1.8;font-size:.95rem"></p>
     </div>
-    <div class="card">
-      <h2>⚖️ توزيع الأعباء</h2>
-      <div id="dist-load"></div>
-    </div>
     <div id="dist-warn-card" class="card hidden">
       <h2>⚠️ تحذيرات التحميل الزائد</h2>
       <div id="dist-warns"></div>
     </div>
     <div class="card">
-      <h2>📌 توزيع المسؤوليات</h2>
+      <h2>👥 المسؤوليات مجمّعة حسب الموظف</h2>
       <div id="dist-analysis"></div>
     </div>
     <div id="dist-sug-card" class="card hidden">
@@ -1058,32 +1068,18 @@ function renderDistResult(result) {
   const demoNote = demoMode ? '<span class="badge badge-demo" style="margin-right:.5rem">تجريبي</span>' : '';
   document.getElementById('dist-team-summary').innerHTML = demoNote + (result.team_summary || '');
 
-  // ── Load bars ──
-  const loadEl = document.getElementById('dist-load');
+  // ── Build load map (API or computed) ──
   const loadData = result.load_analysis || [];
-
-  // If API returned load data, use it; otherwise compute from assignments
-  const effectiveLoad = loadData.length ? loadData : employees.map(e => {
-    const assigned = responsibilities.filter(r => r.assignedTo === e.id).length;
-    const c1 = responsibilities.filter(r => r.cover1 === e.id).length;
-    const c2 = responsibilities.filter(r => r.cover2 === e.id).length;
-    const total = responsibilities.length || 1;
-    const pct = Math.round((assigned * 3 + c1 * 1 + c2 * 0.5) / (total * 3) * 100);
-    return {emp_id: e.id, load_pct: Math.min(pct, 100), status: pct > 60 ? 'overloaded' : 'balanced', comment: ''};
+  const loadMap  = Object.fromEntries(loadData.map(la => [la.emp_id, la]));
+  employees.forEach(e => {
+    if (loadMap[e.id]) return;
+    const ownedN = responsibilities.filter(r => r.assignedTo === e.id).length;
+    const c1N    = responsibilities.filter(r => r.cover1    === e.id).length;
+    const c2N    = responsibilities.filter(r => r.cover2    === e.id).length;
+    const base   = (responsibilities.length || 1) * 3;
+    const pct    = Math.min(Math.round((ownedN*3 + c1N + c2N*0.5) / base * 100), 100);
+    loadMap[e.id] = {emp_id:e.id, load_pct:pct, comment:''};
   });
-
-  loadEl.innerHTML = effectiveLoad.map(la => {
-    const emp = resolveEmp(la.emp_id);
-    if (!emp) return '';
-    const pct = Math.min(la.load_pct || 0, 100);
-    const clr = pct > 60 ? '#ef4444' : pct < 15 ? '#3b82f6' : '#0f766e';
-    return `<div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.7rem;flex-wrap:wrap">
-      <span style="min-width:145px;font-size:.88rem;font-weight:600"><span class="dot" style="background:${emp.color}"></span>${emp.name}</span>
-      <div class="load-wrap"><div class="load-bar" style="width:${pct}%;background:${clr}"></div></div>
-      <span style="min-width:44px;font-size:.85rem;font-weight:700;color:${clr}">${pct}%</span>
-      <span style="font-size:.8rem;color:#64748b">${la.comment||''}</span>
-    </div>`;
-  }).join('');
 
   // ── Warnings ──
   const warns = result.overload_warnings || [];
@@ -1093,42 +1089,94 @@ function renderDistResult(result) {
     document.getElementById('dist-warns').innerHTML = warns.map(w=>`<div class="overload-warn">⚠️ ${w}</div>`).join('');
   } else wc.classList.add('hidden');
 
-  // ── Per-responsibility analysis ──
-  const roleLabels = ['👤 المسؤول الرئيسي','🔵 المغطي الافتراضي','🟣 المغطي الاحتياطي'];
-  const roleBg     = ['#d1fae5','#dbeafe','#f3e8ff'];
-  const roleClr    = ['#065f46','#1e40af','#6b21a8'];
-
-  // Use analysis array if present, otherwise build one from saved assignments
+  // ── Build analysis items (API or from saved assignments) ──
   const analysisItems = (result.analysis||[]).length
     ? result.analysis
     : responsibilities.map(r => ({
-        resp_id: r.id,
-        owner_id:   r.assignedTo,
-        cover1_id:  r.cover1,
-        cover2_id:  r.cover2,
-        rankings: [r.assignedTo, r.cover1, r.cover2].filter(Boolean).map((id,i) => ({emp_id:id, rank:i+1, score:[88,70,55][i], role:['Owner','Cover1','Cover2'][i], reasons:[], warnings:[], fit_summary:''})),
-        recommendation: '', risk_if_wrong: ''
+        resp_id:r.id, owner_id:r.assignedTo, cover1_id:r.cover1, cover2_id:r.cover2,
+        rankings:[r.assignedTo,r.cover1,r.cover2].filter(Boolean).map((id,i)=>({emp_id:id,rank:i+1,score:[88,70,55][i]})),
+        recommendation:'', risk_if_wrong:''
       }));
 
-  document.getElementById('dist-analysis').innerHTML = analysisItems.map(item => {
-    const resp  = resolveResp(item.resp_id);
-    const ranks = (item.rankings||[]).slice(0,3);
-    return `<div class="dist-card">
-      <h4>📌 ${resp ? resp.name : (item.resp_id||'—')}</h4>
-      <p style="font-size:.82rem;color:#64748b;margin-bottom:.6rem">${item.recommendation||''}</p>
-      ${ranks.map((rk,i) => {
-        const emp = resolveEmp(rk.emp_id);
-        if (!emp) return '';
-        return `<div class="ranking-row">
-          <div class="rank-badge rank-${i+1}">${i+1}</div>
-          <span style="display:inline-flex;align-items:center;gap:.25rem;background:${roleBg[i]};color:${roleClr[i]};border-radius:99px;padding:.15rem .6rem;font-size:.8rem;font-weight:600;min-width:120px">${emp.name}</span>
-          <span style="color:#64748b;font-size:.81rem;flex:1">${roleLabels[i]}</span>
-          <span style="font-size:.82rem;font-weight:700;color:#0f766e">${rk.score||0}%</span>
-        </div>`;
-      }).join('')}
-      ${item.risk_if_wrong?`<p style="font-size:.8rem;color:#b91c1c;margin-top:.5rem">⚠️ ${item.risk_if_wrong}</p>`:''}
+  // ── Index: owner → [{resp, item}] ──
+  const ownerMap = {};
+  const unassigned = [];
+  analysisItems.forEach(item => {
+    const resp = resolveResp(item.resp_id);
+    if (!resp) return;
+    const ownerId = item.owner_id || (item.rankings||[])[0]?.emp_id || null;
+    const owner   = ownerId ? resolveEmp(ownerId) : null;
+    if (owner) {
+      (ownerMap[owner.id] = ownerMap[owner.id]||[]).push({resp, item, ownerId:owner.id});
+    } else {
+      unassigned.push({resp, item});
+    }
+  });
+
+  // ── Sort employees by name ──
+  const sorted = [...employees].sort((a,b) => a.name.localeCompare(b.name,'ar'));
+
+  // ── Render grouped cards ──
+  const groupHtml = sorted.map(emp => {
+    const myResps = ownerMap[emp.id] || [];
+    const la      = loadMap[emp.id]  || {load_pct:0, comment:''};
+    const pct     = Math.min(la.load_pct||0, 100);
+    const clr     = pct>60?'#ef4444':pct<15?'#3b82f6':'#0f766e';
+    const initials = emp.name.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('');
+
+    const respRows = myResps.length === 0
+      ? `<div class="emp-no-resp">لا توجد مسؤوليات مسندة كمسؤول رئيسي</div>`
+      : myResps.map(({resp, item}) => {
+          const c1   = resolveEmp(item.cover1_id);
+          const c2   = resolveEmp(item.cover2_id);
+          const score = (item.rankings||[])[0]?.score;
+          const impact = resp.impact || '';
+          const impBadge = IMP_AR[impact] ? `<span class="badge ${IMP_CLS[impact]||'badge-medium'}" style="font-size:.7rem;padding:.1rem .4rem">${IMP_AR[impact]}</span>` : '';
+          return `<div class="emp-resp-row">
+            <div>
+              <div class="emp-resp-name">📌 ${resp.name} ${impBadge}</div>
+              <div class="emp-resp-covers" style="margin-top:.3rem;justify-content:flex-start">
+                <span class="cover-tag" style="background:#dbeafe;color:#1e40af">🔵 ${c1?c1.name:'غير محدد'}</span>
+                <span class="cover-tag" style="background:#f3e8ff;color:#6b21a8">🟣 ${c2?c2.name:'غير محدد'}</span>
+              </div>
+            </div>
+            ${score?`<span style="font-size:.82rem;font-weight:800;color:#0f766e">${score}%</span>`:''}
+          </div>`;
+        }).join('');
+
+    return `<div class="emp-group">
+      <div class="emp-group-header" style="background:${emp.color}12;border-bottom:1.5px solid ${emp.color}30">
+        <div class="emp-avatar" style="background:${emp.color}">${initials}</div>
+        <div class="emp-group-meta">
+          <div class="emp-nm">${emp.name}</div>
+          <div class="emp-sub">${[emp.title,emp.dept].filter(Boolean).join(' — ')} &nbsp;·&nbsp; ${myResps.length} مسؤولية</div>
+        </div>
+        <div class="emp-load-wrap">
+          <div class="load-wrap" style="min-width:90px"><div class="load-bar" style="width:${pct}%;background:${clr}"></div></div>
+          <span style="font-size:.85rem;font-weight:800;color:${clr};min-width:36px">${pct}%</span>
+          ${la.comment?`<span style="font-size:.72rem;color:#64748b">${la.comment}</span>`:''}
+        </div>
+      </div>
+      <div class="emp-resp-list">${respRows}</div>
     </div>`;
   }).join('');
+
+  const unassignedHtml = unassigned.length
+    ? `<div class="emp-group" style="border-color:#fca5a5">
+        <div class="emp-group-header" style="background:#fee2e220;border-bottom:1.5px solid #fca5a5">
+          <div class="emp-avatar" style="background:#ef4444">!</div>
+          <div class="emp-group-meta">
+            <div class="emp-nm" style="color:#b91c1c">مسؤوليات غير موزعة</div>
+            <div class="emp-sub">${unassigned.length} مسؤولية لم يُحدَّد لها مسؤول</div>
+          </div>
+        </div>
+        <div class="emp-resp-list">
+          ${unassigned.map(({resp})=>`<div class="emp-resp-row"><div class="emp-resp-name">📌 ${resp.name}</div></div>`).join('')}
+        </div>
+      </div>`
+    : '';
+
+  document.getElementById('dist-analysis').innerHTML = groupHtml + unassignedHtml;
 
   // ── Suggestions ──
   const sug = result.suggestions||[];
