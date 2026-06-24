@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>نظام إدارة الإجازات والموارد البشرية</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0fdf4;color:#1e293b;min-height:100vh}
+/* ── Login ── */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f766e,#134e4a)}
+.login-card{background:#fff;border-radius:20px;padding:2.5rem;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.login-logo{text-align:center;margin-bottom:1.5rem}
+.login-logo h1{font-size:1.3rem;color:#0f766e;margin-top:.5rem;line-height:1.4}
+.login-logo p{font-size:.8rem;color:#64748b;margin-top:.25rem}
+/* ── App Shell ── */
+#app-shell{min-height:100vh}
+header{background:linear-gradient(135deg,#0f766e,#134e4a);color:#fff;padding:.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2);flex-wrap:wrap;gap:.5rem}
+.header-left{display:flex;align-items:center;gap:.75rem}
+header h1{font-size:1.15rem;font-weight:700}
+.header-right{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.user-badge{background:rgba(255,255,255,.15);border-radius:99px;padding:.3rem .85rem;font-size:.82rem;display:flex;align-items:center;gap:.4rem}
+.role-chip{background:#5eead4;color:#134e4a;border-radius:99px;padding:.1rem .55rem;font-size:.7rem;font-weight:700}
+.notif-btn{position:relative;background:rgba(255,255,255,.15);border:none;border-radius:99px;color:#fff;padding:.3rem .7rem;cursor:pointer;font-size:.85rem}
+.notif-badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:99px;font-size:.65rem;font-weight:700;padding:.05rem .35rem;min-width:16px;text-align:center}
+nav{background:#134e4a;display:flex;overflow-x:auto;border-bottom:2px solid #0f766e}
+nav button{background:none;border:none;color:#99f6e4;padding:.8rem 1.4rem;cursor:pointer;font-size:.9rem;white-space:nowrap;transition:all .2s;font-family:Arial,sans-serif;border-bottom:2px solid transparent;margin-bottom:-2px}
+nav button:hover{background:rgba(255,255,255,.08);color:#fff}
+nav button.active{background:#0f766e;color:#fff;border-bottom-color:#5eead4}
+main{max-width:1150px;margin:1.5rem auto;padding:0 1rem}
+/* ── Cards & Layout ── */
+.card{background:#fff;border-radius:14px;padding:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:1.5rem;border:1px solid #e2e8f0}
+.card h2{font-size:1.05rem;color:#0f766e;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:1rem}
+.stat-card{border-radius:12px;padding:1.1rem;text-align:center;color:#fff}
+.stat-card .num{font-size:2rem;font-weight:800;line-height:1}
+.stat-card .lbl{font-size:.78rem;opacity:.85;margin-top:.2rem}
+.sc-teal{background:linear-gradient(135deg,#0f766e,#0d9488)}
+.sc-purple{background:linear-gradient(135deg,#7c3aed,#6d28d9)}
+.sc-blue{background:linear-gradient(135deg,#0369a1,#0284c7)}
+.sc-amber{background:linear-gradient(135deg,#b45309,#d97706)}
+.sc-red{background:linear-gradient(135deg,#b91c1c,#dc2626)}
+.sc-green{background:linear-gradient(135deg,#15803d,#16a34a)}
+/* ── Forms ── */
+.form-row{display:flex;flex-wrap:wrap;gap:.7rem;margin-bottom:.7rem}
+.field-group{display:flex;flex-direction:column;flex:1;min-width:150px;gap:.2rem}
+.field-group input,.field-group select,.field-group textarea{padding:.6rem .8rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:.9rem;font-family:Arial,sans-serif;background:#fafafa;transition:border .2s;width:100%}
+.field-group input:focus,.field-group select:focus,.field-group textarea:focus{outline:none;border-color:#0f766e;background:#fff}
+.field-label{font-size:.78rem;font-weight:700;color:#0f766e}
+.field-hint{font-size:.72rem;color:#94a3b8}
+/* ── Buttons ── */
+.btn{padding:.55rem 1.2rem;border:none;border-radius:9px;cursor:pointer;font-size:.88rem;font-weight:700;transition:all .2s;font-family:Arial,sans-serif;display:inline-flex;align-items:center;gap:.4rem}
+.btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.15)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-primary{background:#0f766e;color:#fff}
+.btn-secondary{background:#6366f1;color:#fff}
+.btn-danger{background:#ef4444;color:#fff}
+.btn-success{background:#16a34a;color:#fff}
+.btn-outline{background:#fff;color:#0f766e;border:1.5px solid #0f766e}
+.btn-amber{background:#d97706;color:#fff}
+.btn-sm{padding:.3rem .75rem;font-size:.8rem}
+.actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
+/* ── Badges ── */
+.badge{display:inline-block;padding:.2rem .65rem;border-radius:99px;font-size:.75rem;font-weight:700}
+.badge-green{background:#dcfce7;color:#15803d}
+.badge-blue{background:#dbeafe;color:#1d4ed8}
+.badge-amber{background:#fef3c7;color:#b45309}
+.badge-red{background:#fee2e2;color:#b91c1c}
+.badge-purple{background:#f3e8ff;color:#7c3aed}
+.badge-gray{background:#f1f5f9;color:#64748b}
+.badge-teal{background:#ccfbf1;color:#0f766e}
+/* ── Tables ── */
+table{width:100%;border-collapse:collapse;font-size:.87rem}
+th{background:#0f766e;color:#fff;padding:.65rem .85rem;text-align:right;font-weight:600}
+td{padding:.65rem .85rem;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fffe}
+/* ── Alerts ── */
+.alert{padding:.75rem 1rem;border-radius:9px;margin-bottom:1rem;font-size:.88rem;display:flex;align-items:flex-start;gap:.5rem}
+.alert-success{background:#dcfce7;color:#15803d;border:1px solid #86efac}
+.alert-error{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5}
+.alert-info{background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd}
+.alert-warn{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+/* ── Modals ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:1000;padding:0}
+@media(min-width:640px){.modal-bg{align-items:center;padding:1rem}}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:1.75rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,.2)}
+@media(min-width:640px){.modal{border-radius:16px}}
+.modal h3{color:#0f766e;margin-bottom:1rem;font-size:1.1rem}
+.modal-close{float:left;background:none;border:none;font-size:1.3rem;cursor:pointer;color:#94a3b8;line-height:1}
+/* ── Points Hero Card ── */
+.points-hero{background:linear-gradient(135deg,#0f766e,#134e4a);border-radius:16px;padding:1.5rem;color:#fff;margin-bottom:1.5rem}
+.pts-total{font-size:3rem;font-weight:800;line-height:1}
+.pts-row{display:flex;gap:1rem;margin-top:1rem;flex-wrap:wrap}
+.pts-item{background:rgba(255,255,255,.15);border-radius:10px;padding:.65rem 1rem;flex:1;min-width:100px;text-align:center}
+.pts-item .pi-num{font-size:1.5rem;font-weight:700}
+.pts-item .pi-lbl{font-size:.72rem;opacity:.8}
+.rank-hero{margin-top:1rem;display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.2);border-radius:99px;padding:.4rem 1rem;font-weight:700}
+/* ── Ranking ── */
+.rank-row{display:flex;align-items:center;gap:.75rem;padding:.55rem .25rem;border-bottom:1px dashed #e9eef5}
+.rank-row:last-child{border-bottom:none}
+.rank-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0}
+.rn-1{background:#fbbf24;color:#78350f}
+.rn-2{background:#94a3b8;color:#1e293b}
+.rn-3{background:#cd7c2f;color:#fff}
+.rn-other{background:#e2e8f0;color:#64748b}
+/* ── Misc ── */
+.hidden{display:none!important}
+.page{display:none}
+.page.active{display:block}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:2.5rem;color:#94a3b8}
+.hint-box{background:#f0fdf4;border:1px solid #a7f3d0;border-radius:9px;padding:.75rem 1rem;font-size:.84rem;color:#065f46;margin-bottom:.75rem}
+.urgent-card{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:.85rem 1rem;margin-bottom:.65rem}
+.notif-panel-wrap{background:#fff;border-radius:14px;padding:1.25rem;box-shadow:0 4px 20px rgba(0,0,0,.12);width:300px;max-height:400px;overflow-y:auto}
+.notif-item{padding:.6rem 0;border-bottom:1px solid #f1f5f9;font-size:.83rem}
+.notif-item:last-child{border-bottom:none}
+.notif-links{display:flex;gap:.4rem;margin-top:.3rem}
+.notif-links a{font-size:.75rem;padding:.15rem .55rem;border-radius:6px;text-decoration:none;font-weight:700}
+.nl-wa{background:#dcfce7;color:#15803d}
+.nl-email{background:#dbeafe;color:#1d4ed8}
+.filter-bar{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.filter-bar select,.filter-bar input{padding:.4rem .75rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.84rem;background:#fff;font-family:Arial,sans-serif}
+@media(max-width:600px){header h1{font-size:1rem}.btn{padding:.45rem .9rem;font-size:.82rem}th,td{padding:.5rem .6rem}.pts-total{font-size:2.2rem!important}}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8">
+        <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/>
+        <path d="M8 14h1M12 14h1M16 14h1M8 17h1M12 17h1"/>
+      </svg>
+      <h1>نظام إدارة الإجازات<br/>والموارد البشرية</h1>
+      <p>HR Leave Management System</p>
+    </div>
+    <div id="login-alert"></div>
+    <div class="field-group" style="margin-bottom:.75rem">
+      <span class="field-label">اسم المستخدم</span>
+      <input id="login-user" type="text" placeholder="أدخل اسم المستخدم" autocomplete="username"/>
+    </div>
+    <div class="field-group" style="margin-bottom:1.25rem">
+      <span class="field-label">كلمة المرور</span>
+      <input id="login-pass" type="password" placeholder="أدخل كلمة المرور" autocomplete="current-password"/>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:.75rem" onclick="doLogin()" id="btn-login">
+      دخول <span id="spin-login" class="spinner hidden"></span>
+    </button>
+    <p style="font-size:.75rem;color:#94a3b8;text-align:center;margin-top:1rem">للدعم الفني تواصل مع المدير العام</p>
+  </div>
+</div>
+
+<!-- ══ APP SHELL ══ -->
+<div id="app-shell" class="hidden">
+
+<header>
+  <div class="header-left">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.8">
+      <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/>
+    </svg>
+    <div>
+      <h1>نظام إدارة الإجازات</h1>
+      <div style="font-size:.7rem;opacity:.7">HR Leave Management</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div style="position:relative">
+      <button class="notif-btn" onclick="toggleNotifPanel()" id="notif-btn">
+        📨 <span id="notif-count" class="notif-badge hidden">0</span>
+      </button>
+      <div id="notif-panel" class="hidden" style="position:absolute;top:calc(100% + 8px);left:0;z-index:500">
+        <div class="notif-panel-wrap">
+          <div style="font-weight:700;font-size:.9rem;color:#0f766e;margin-bottom:.75rem">📨 الإشعارات</div>
+          <div id="notif-list"><div class="empty-state" style="padding:1rem">لا توجد إشعارات</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="user-badge">
+      <span id="header-name">—</span>
+      <span class="role-chip" id="header-role">—</span>
+    </div>
+    <button class="btn btn-outline btn-sm" style="border-color:#5eead4;color:#5eead4" onclick="logout()">خروج</button>
+  </div>
+</header>
+
+<nav id="main-nav"></nav>
+
+<main>
+
+<!-- Employee Dashboard -->
+<div id="page-emp-dashboard" class="page">
+  <div id="emp-dash-hero"></div>
+  <div id="emp-pending-cover" class="hidden">
+    <div class="card" style="border-color:#fed7aa;background:#fff7ed">
+      <h2 style="color:#9a3412">⚡ تغطية مطلوبة منك</h2>
+      <div id="emp-cover-cards"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>📋 آخر طلباتي</h2>
+    <div id="emp-recent-requests"><div class="empty-state">لا توجد طلبات بعد</div></div>
+  </div>
+</div>
+
+<!-- Submit Request -->
+<div id="page-submit" class="page">
+  <div class="card">
+    <h2>➕ تقديم طلب جديد</h2>
+    <div id="submit-alert"></div>
+    <div class="form-row">
+      <div class="field-group">
+        <span class="field-label">نوع الطلب *</span>
+        <select id="req-type" onchange="onTypeChange()">
+          <option value="">— اختر النوع —</option>
+          <option value="regular">إجازة اعتيادية</option>
+          <option value="emergency">إجازة طارئة</option>
+          <option value="sick">إجازة مرضية</option>
+          <option value="permission">استئذان</option>
+        </select>
+      </div>
+      <div class="field-group" id="subtype-group" style="display:none">
+        <span class="field-label">النوع الفرعي *</span>
+        <select id="req-subtype" onchange="onSubtypeChange()"></select>
+      </div>
+    </div>
+    <div id="req-hint-box" class="hint-box hidden"></div>
+    <div id="date-fields" class="form-row" style="display:none">
+      <div class="field-group">
+        <span class="field-label">تاريخ البداية *</span>
+        <input type="date" id="req-start"/>
+      </div>
+      <div class="field-group">
+        <span class="field-label">تاريخ النهاية</span>
+        <input type="date" id="req-end"/>
+      </div>
+    </div>
+    <div id="hours-field" class="form-row" style="display:none">
+      <div class="field-group" style="max-width:200px">
+        <span class="field-label">عدد الساعات *</span>
+        <input type="number" id="req-hours" min="0.5" max="9" step="0.5" placeholder="مثال: 2"/>
+        <span class="field-hint">الحد الشهري: 4 مرات أو 9 ساعات</span>
+      </div>
+    </div>
+    <div id="cover-fields" style="display:none">
+      <div class="form-row">
+        <div class="field-group">
+          <span class="field-label">تحديد المغطي (اختياري — يُستخدم الافتراضي من ملفك)</span>
+          <select id="req-cover1"><option value="">— المغطي الافتراضي —</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field-group">
+        <span class="field-label">ملاحظات</span>
+        <textarea id="req-notes" placeholder="أي تفاصيل إضافية..." style="min-height:64px"></textarea>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="submitRequest()" id="btn-submit">
+        إرسال الطلب <span id="spin-submit" class="spinner hidden"></span>
+      </button>
+      <button class="btn btn-outline" onclick="clearSubmitForm()">مسح</button>
+    </div>
+  </div>
+</div>
+
+<!-- My Requests -->
+<div id="page-my-requests" class="page">
+  <div class="card">
+    <h2>📋 طلباتي</h2>
+    <div id="my-req-alert"></div>
+    <div id="my-requests-list"><div class="empty-state">لا توجد طلبات بعد</div></div>
+  </div>
+</div>
+
+<!-- My Points -->
+<div id="page-my-points" class="page">
+  <div id="my-points-hero"></div>
+  <div class="card">
+    <h2>📈 سجل النقاط</h2>
+    <div id="my-points-history"><div class="empty-state">لا توجد سجلات بعد</div></div>
+  </div>
+</div>
+
+<!-- Cover Inbox -->
+<div id="page-cover-inbox" class="page">
+  <div class="card">
+    <h2>🔔 طلبات التغطية الواردة</h2>
+    <div id="cover-inbox-alert"></div>
+    <div id="cover-inbox-list"><div class="empty-state">لا توجد طلبات تغطية معلقة</div></div>
+  </div>
+</div>
+
+<!-- Coordinator Dashboard -->
+<div id="page-coord-dashboard" class="page">
+  <div class="stat-grid" id="coord-stats"></div>
+  <div class="card">
+    <h2 style="color:#9a3412">⚡ تنبيهات عاجلة — مرضية قريبة الموعد</h2>
+    <div id="coord-urgent-list"><div class="empty-state" style="padding:1rem">لا توجد حالات عاجلة</div></div>
+  </div>
+  <div class="card">
+    <h2>🕐 آخر النشاطات</h2>
+    <div id="coord-recent"><div class="empty-state">لا توجد نشاطات</div></div>
+  </div>
+</div>
+
+<!-- All Requests -->
+<div id="page-all-requests" class="page">
+  <div class="card">
+    <h2>📊 جميع الطلبات</h2>
+    <div class="filter-bar">
+      <select id="filter-status" onchange="loadAllRequests()">
+        <option value="">جميع الحالات</option>
+        <option value="pending_cover1">انتظار مغطٍّ أول</option>
+        <option value="pending_cover2">انتظار مغطٍّ ثانٍ</option>
+        <option value="pending_manager">انتظار المدير</option>
+        <option value="suspended">معلق (مرضية)</option>
+        <option value="approved">معتمد</option>
+        <option value="rejected">مرفوض</option>
+      </select>
+      <select id="filter-type" onchange="loadAllRequests()">
+        <option value="">جميع الأنواع</option>
+        <option value="regular">اعتيادية</option>
+        <option value="emergency">طارئة</option>
+        <option value="sick">مرضية</option>
+        <option value="permission">استئذان</option>
+      </select>
+      <input type="month" id="filter-month" onchange="loadAllRequests()"/>
+    </div>
+    <div id="all-requests-list"><div class="empty-state">لا توجد طلبات</div></div>
+  </div>
+</div>
+
+<!-- Manager Approvals -->
+<div id="page-manager-approvals" class="page">
+  <div class="card">
+    <h2>✅ الموافقات المعلقة</h2>
+    <div id="manager-alert"></div>
+    <div id="manager-approvals-list"><div class="empty-state">لا توجد طلبات معلقة ✅</div></div>
+  </div>
+  <div class="card">
+    <h2>📋 جميع الطلبات</h2>
+    <div id="manager-all-list"><div class="empty-state">لا توجد طلبات</div></div>
+  </div>
+</div>
+
+<!-- GM Dashboard -->
+<div id="page-gm-dashboard" class="page">
+  <div class="stat-grid" id="gm-stats"></div>
+  <div class="card">
+    <h2>🏆 ترتيب الفريق</h2>
+    <div id="gm-ranking-list"><div class="empty-state">لا يوجد موظفون</div></div>
+  </div>
+</div>
+
+<!-- GM Employee Management -->
+<div id="page-gm-employees" class="page">
+  <div class="card">
+    <h2>👥 إدارة الموظفين</h2>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="openAddEmployeeModal()">➕ إضافة موظف</button>
+    </div>
+    <div id="gm-emp-alert"></div>
+    <div id="gm-emp-list"><div class="empty-state">لا يوجد موظفون</div></div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div id="page-settings" class="page">
+  <div class="card">
+    <h2>⚙️ إعدادات قواعد النقاط</h2>
+    <div id="settings-alert"></div>
+    <p style="font-size:.85rem;color:#64748b;margin-bottom:1rem">اضغط "حفظ" بعد تعديل أي قيمة.</p>
+    <div id="settings-rules-list"><div class="empty-state">جاري التحميل...</div></div>
+  </div>
+  <div class="card">
+    <h2>🎁 مكافأة نهاية العام</h2>
+    <p style="font-size:.85rem;color:#64748b;margin-bottom:1rem">منح +15 نقطة للموظفين الذين لم يستخدموا مرضية هاتفية طوال العام.</p>
+    <button class="btn btn-amber" onclick="runYearEndBonus()">تطبيق المكافأة</button>
+    <div id="year-end-result" style="margin-top:.75rem"></div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ══ MODALS ══ -->
+
+<div id="modal-assign-cover" class="modal-bg hidden" onclick="closeModalIfBg(event,'modal-assign-cover')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-assign-cover')">✕</button>
+    <h3>👤 تعيين مغطٍّ بديل</h3>
+    <div id="assign-cover-alert"></div>
+    <input type="hidden" id="assign-cover-req-id"/>
+    <div class="field-group" style="margin-bottom:1rem">
+      <span class="field-label">اختر الموظف</span>
+      <select id="assign-cover-select"></select>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="confirmAssignCover()">تعيين</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-assign-cover')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-emp" class="modal-bg hidden" onclick="closeModalIfBg(event,'modal-emp')">
+  <div class="modal" style="max-width:560px">
+    <button class="modal-close" onclick="closeModal('modal-emp')">✕</button>
+    <h3 id="modal-emp-title">➕ إضافة موظف</h3>
+    <div id="modal-emp-alert"></div>
+    <input type="hidden" id="emp-edit-id"/>
+    <div class="form-row">
+      <div class="field-group" style="flex:2">
+        <span class="field-label">الاسم الكامل *</span>
+        <input id="emp-fullname" placeholder="مثال: أحمد العمري"/>
+      </div>
+      <div class="field-group">
+        <span class="field-label">المسمى الوظيفي</span>
+        <input id="emp-title-f" placeholder="مثال: أخصائي"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field-group">
+        <span class="field-label">اسم المستخدم *</span>
+        <input id="emp-username" placeholder="بدون مسافات"/>
+      </div>
+      <div class="field-group">
+        <span class="field-label">كلمة المرور</span>
+        <input id="emp-password" type="password" placeholder="اتركه فارغاً للإبقاء على الحالي"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field-group">
+        <span class="field-label">رقم الجوال (دولي)</span>
+        <input id="emp-phone" placeholder="966501234567"/>
+      </div>
+      <div class="field-group">
+        <span class="field-label">البريد الإلكتروني</span>
+        <input id="emp-email" type="email" placeholder="example@domain.com"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field-group">
+        <span class="field-label">الصلاحية *</span>
+        <select id="emp-role">
+          <option value="employee">موظف</option>
+          <option value="coordinator">منسق</option>
+          <option value="manager">مدير</option>
+          <option value="gm">مدير عام</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <span class="field-label">الحالة</span>
+        <select id="emp-active">
+          <option value="true">نشط</option>
+          <option value="false">موقوف</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field-group">
+        <span class="field-label">المغطي الافتراضي الأول</span>
+        <select id="emp-cover1-default"></select>
+      </div>
+      <div class="field-group">
+        <span class="field-label">المغطي الاحتياطي الثاني</span>
+        <select id="emp-cover2-default"></select>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="saveEmployee()">💾 حفظ</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-emp')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-notif-links" class="modal-bg hidden" onclick="closeModalIfBg(event,'modal-notif-links')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-notif-links')">✕</button>
+    <h3>📨 إرسال الإشعار</h3>
+    <p style="font-size:.85rem;color:#64748b;margin-bottom:1rem">اضغط للإرسال:</p>
+    <div id="notif-links-content"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  CONFIG — replace with your Supabase values
+// ═══════════════════════════════════════════════
+const SUPABASE_URL  = 'https://YOUR_PROJECT.supabase.co';
+const SUPABASE_ANON = 'YOUR_ANON_KEY';
+
+// ═══════════════════════════════════════════════
+//  SUPABASE CLIENT
+// ═══════════════════════════════════════════════
+const { createClient } = supabase;
+const DB = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ═══════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════
+const ROLE_LABELS = { employee:'موظف', coordinator:'منسق', manager:'مدير', gm:'مدير عام' };
+const ROLE_PAGES  = {
+  employee:    ['emp-dashboard','submit','my-requests','my-points','cover-inbox'],
+  coordinator: ['coord-dashboard','all-requests'],
+  manager:     ['manager-approvals'],
+  gm:          ['gm-dashboard','gm-employees','settings']
+};
+const NAV_LABELS = {
+  'emp-dashboard':'لوحتي','submit':'طلب جديد','my-requests':'طلباتي',
+  'my-points':'نقاطي','cover-inbox':'بريد التغطية',
+  'coord-dashboard':'لوحة التنسيق','all-requests':'جميع الطلبات',
+  'manager-approvals':'الموافقات',
+  'gm-dashboard':'لوحة الأداء','gm-employees':'إدارة الموظفين','settings':'الإعدادات'
+};
+const TYPE_LABELS    = { regular:'اعتيادية', emergency:'طارئة', sick:'مرضية', permission:'استئذان' };
+const SUBTYPE_LABELS = {
+  scheduled:'ضمن الخطة', unscheduled:'خارج الخطة',
+  call_sick:'مرضية هاتفية', general:'طارئة عامة',
+  before_shift:'قبل الدوام', after_shift:'بعد الدوام'
+};
+const STATUS_LABELS = {
+  pending:'معلق', pending_cover1:'انتظار مغطٍّ أول',
+  pending_cover2:'انتظار مغطٍّ ثانٍ', pending_manager:'انتظار المدير',
+  suspended:'معلق — نافذة 10 أيام', approved:'معتمد', rejected:'مرفوض', cancelled:'ملغي'
+};
+const STATUS_BADGE = {
+  pending:'badge-gray', pending_cover1:'badge-amber', pending_cover2:'badge-amber',
+  pending_manager:'badge-blue', suspended:'badge-purple',
+  approved:'badge-green', rejected:'badge-red', cancelled:'badge-gray'
+};
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let currentUser = null;
+let pointsRules = {};
+let allUsers    = [];
+
+// ═══════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+  del: k => localStorage.removeItem(k)
+};
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function addDays(date, n) { const d=new Date(date); d.setDate(d.getDate()+n); return d; }
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return isNaN(dt) ? d : dt.toLocaleDateString('ar-SA',{year:'numeric',month:'short',day:'numeric'});
+}
+function fmtDT(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleString('ar-SA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function getUserById(id) { return allUsers.find(u=>u.id===id)||null; }
+
+// ═══════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════
+async function doLogin() {
+  const username = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value;
+  if (!username || !password) { showLoginAlert('يرجى إدخال اسم المستخدم وكلمة المرور'); return; }
+  const btn=document.getElementById('btn-login'), sp=document.getElementById('spin-login');
+  btn.disabled=true; sp.classList.remove('hidden');
+  try {
+    const hash = await sha256(password);
+    const { data, error } = await DB.from('users')
+      .select('*').eq('username',username).eq('password_hash',hash).eq('is_active',true).single();
+    if (error||!data) { showLoginAlert('اسم المستخدم أو كلمة المرور غير صحيحة'); return; }
+    currentUser = data;
+    LS.set('lms_session',{id:data.id});
+    await afterLogin();
+  } catch(e) { showLoginAlert('خطأ في الاتصال: '+e.message);
+  } finally { btn.disabled=false; sp.classList.add('hidden'); }
+}
+
+async function restoreSession() {
+  const s = LS.get('lms_session');
+  if (!s?.id) return false;
+  try {
+    const { data } = await DB.from('users').select('*').eq('id',s.id).eq('is_active',true).single();
+    if (!data) { LS.del('lms_session'); return false; }
+    currentUser = data;
+    await afterLogin();
+    return true;
+  } catch { return false; }
+}
+
+async function afterLogin() {
+  await loadPointsRules();
+  await loadAllUsers();
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  document.getElementById('header-name').textContent = currentUser.full_name;
+  document.getElementById('header-role').textContent = ROLE_LABELS[currentUser.role]||currentUser.role;
+  initNavForRole();
+  await checkSuspendedRequests();
+  await refreshNotifBadge();
+}
+
+function logout() {
+  currentUser=null; LS.del('lms_session');
+  document.getElementById('app-shell').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+}
+
+// ═══════════════════════════════════════════════
+//  DATA LOADERS
+// ═══════════════════════════════════════════════
+async function loadPointsRules() {
+  const { data } = await DB.from('points_rules').select('*');
+  pointsRules = Object.fromEntries((data||[]).map(r=>[r.rule_key,r.points]));
+}
+async function loadAllUsers() {
+  const { data } = await DB.from('users').select('id,full_name,phone,email,role,title,username,default_cover1_id,default_cover2_id,commitment_points,coverage_points,coverage_days,call_sick_count,is_active').order('full_name');
+  allUsers = data||[];
+}
+
+// ═══════════════════════════════════════════════
+//  ROUTER / NAV
+// ═══════════════════════════════════════════════
+function initNavForRole() {
+  const nav = document.getElementById('main-nav');
+  nav.innerHTML = '';
+  const pages = ROLE_PAGES[currentUser.role]||[];
+  pages.forEach((page,i) => {
+    const btn = document.createElement('button');
+    btn.textContent = NAV_LABELS[page]||page;
+    btn.onclick = () => showPage(page,btn);
+    if (i===0) btn.classList.add('active');
+    nav.appendChild(btn);
+  });
+  if (pages.length) showPage(pages[0], nav.firstChild);
+}
+
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg = document.getElementById('page-'+name);
+  if (pg) pg.classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const map = {
+    'emp-dashboard':loadEmpDashboard,'my-requests':loadMyRequests,'my-points':loadMyPoints,
+    'cover-inbox':loadCoverInbox,'coord-dashboard':loadCoordDashboard,'all-requests':loadAllRequests,
+    'manager-approvals':loadManagerApprovals,'gm-dashboard':loadGMDashboard,
+    'gm-employees':loadGMEmployees,'settings':loadSettings
+  };
+  if (map[name]) map[name]();
+}
+
+// ═══════════════════════════════════════════════
+//  SUBMIT REQUEST
+// ═══════════════════════════════════════════════
+function onTypeChange() {
+  const type = document.getElementById('req-type').value;
+  const subg = document.getElementById('subtype-group');
+  const subsel = document.getElementById('req-subtype');
+  const dateF = document.getElementById('date-fields');
+  const hoursF = document.getElementById('hours-field');
+  const coverF = document.getElementById('cover-fields');
+  const hint = document.getElementById('req-hint-box');
+
+  subsel.innerHTML = '<option value="">— اختر —</option>';
+  if (!type) { subg.style.display='none'; dateF.style.display='none'; hoursF.style.display='none'; coverF.style.display='none'; hint.classList.add('hidden'); return; }
+
+  const subs = {
+    regular:   [{v:'scheduled',l:'ضمن الخطة السنوية'},{v:'unscheduled',l:'خارج الخطة'}],
+    emergency: [{v:'call_sick',l:'مرضية هاتفية (Call Sick)'},{v:'general',l:'طارئة عامة'}],
+    sick:      [{v:'before_shift',l:'إبلاغ قبل الدوام + تقرير طبي'},{v:'after_shift',l:'إبلاغ بعد الدوام'}]
+  };
+  const list = subs[type]||[];
+  if (list.length) {
+    list.forEach(s=>{ const o=document.createElement('option'); o.value=s.v; o.textContent=s.l; subsel.appendChild(o); });
+    subg.style.display='';
+  } else { subg.style.display='none'; }
+
+  if (type==='permission') {
+    dateF.style.display='none'; hoursF.style.display=''; coverF.style.display='none';
+    showHint('استئذان: الحد الشهري 4 مرات أو 9 ساعات. ضمن الحد: +3 نقاط. التجاوز: −8 نقاط.');
+  } else { hoursF.style.display='none'; onSubtypeChange(); }
+}
+
+function onSubtypeChange() {
+  const type = document.getElementById('req-type').value;
+  const sub  = document.getElementById('req-subtype').value;
+  if (type==='permission') return;
+  const dateF = document.getElementById('date-fields');
+  const coverF = document.getElementById('cover-fields');
+  dateF.style.display = sub ? '' : 'none';
+  const hints = {
+    'regular-scheduled':   'ضمن الخطة السنوية — تغطية تلقائية لا تستلزم موافقة (+5 نقاط).',
+    'regular-unscheduled': 'خارج الخطة — يحتاج موافقة المغطي ثم المدير (+3 نقاط).',
+    'emergency-call_sick': 'مرضية هاتفية: محدودة 3 مرات سنوياً — لا يومين متتاليين (+2 نقطة).',
+    'emergency-general':   'طارئة عامة: يجب وجود مغطٍّ. بدون مغطٍّ = عقوبة −10 نقاط.',
+    'sick-before_shift':   'إبلاغ قبل الدوام مع تقرير طبي — تغطية تلقائية (+3 نقاط).',
+    'sick-after_shift':    'إبلاغ بعد الدوام — يدخل "معلق" لـ10 أيام. خلالها: رفع تقرير (+2) أو تحويل لاعتيادية (−5).'
+  };
+  showHint(hints[`${type}-${sub}`]||'');
+  const needsCover = (type==='regular'&&sub==='unscheduled')||type==='emergency'||(type==='sick'&&sub==='after_shift');
+  coverF.style.display = needsCover ? '' : 'none';
+  if (needsCover) populateCoverSelect();
+}
+
+function showHint(t) {
+  const b=document.getElementById('req-hint-box');
+  if (t) { b.textContent='ℹ️ '+t; b.classList.remove('hidden'); } else b.classList.add('hidden');
+}
+
+function populateCoverSelect() {
+  const sel = document.getElementById('req-cover1');
+  sel.innerHTML = '<option value="">— المغطي الافتراضي من ملفك —</option>';
+  allUsers.filter(u=>u.id!==currentUser.id&&u.is_active).forEach(u=>{
+    const o=document.createElement('option'); o.value=u.id;
+    o.textContent=u.full_name+(u.title?' — '+u.title:'');
+    sel.appendChild(o);
+  });
+}
+
+function clearSubmitForm() {
+  ['req-type','req-subtype','req-start','req-end','req-hours','req-notes'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('req-cover1').value='';
+  document.getElementById('subtype-group').style.display='none';
+  document.getElementById('date-fields').style.display='none';
+  document.getElementById('hours-field').style.display='none';
+  document.getElementById('cover-fields').style.display='none';
+  document.getElementById('req-hint-box').classList.add('hidden');
+}
+
+async function submitRequest() {
+  const type    = document.getElementById('req-type').value;
+  const subtype = document.getElementById('req-subtype').value;
+  const start   = document.getElementById('req-start').value;
+  const end     = document.getElementById('req-end').value;
+  const hours   = parseFloat(document.getElementById('req-hours').value)||null;
+  const notes   = document.getElementById('req-notes').value.trim();
+  const c1ov    = document.getElementById('req-cover1').value||null;
+
+  if (!type) { showAlert('submit-alert','يرجى اختيار نوع الطلب','error'); return; }
+  if (type!=='permission'&&!subtype) { showAlert('submit-alert','يرجى اختيار النوع الفرعي','error'); return; }
+  if ((type==='regular'||type==='emergency'||type==='sick')&&!start) { showAlert('submit-alert','يرجى تحديد تاريخ البداية','error'); return; }
+  if (type==='permission'&&!hours) { showAlert('submit-alert','يرجى إدخال عدد الساعات','error'); return; }
+  if (type==='emergency'&&subtype==='call_sick'&&(currentUser.call_sick_count||0)>=3) {
+    showAlert('submit-alert','تجاوزت الحد السنوي لمرضية هاتفية (3 مرات)','error'); return;
+  }
+
+  const btn=document.getElementById('btn-submit'), sp=document.getElementById('spin-submit');
+  btn.disabled=true; sp.classList.remove('hidden');
+  try {
+    const status = determineInitialStatus(type,subtype);
+    const c1 = c1ov || currentUser.default_cover1_id || null;
+    const c2 = currentUser.default_cover2_id || null;
+    const susp = (type==='sick'&&subtype==='after_shift')
+      ? addDays(new Date(),10).toISOString().split('T')[0] : null;
+
+    const { data: req, error } = await DB.from('requests').insert({
+      employee_id: currentUser.id, type, subtype:subtype||null,
+      start_date:start||null, end_date:end||start||null, hours:hours||null,
+      status, cover1_id:status==='pending_cover1'?c1:null,
+      cover2_id:status==='pending_cover1'?c2:null,
+      assigned_cover_id:null, suspension_deadline:susp,
+      notes:notes||null, medical_report_submitted:false, is_double_coverage:false, points_awarded:null
+    }).select().single();
+    if (error) throw error;
+
+    if (status==='approved') await awardPointsImmediate(req);
+
+    // Permission: check limits now and award points
+    if (type==='permission') {
+      const lim = await checkPermissionLimit(currentUser.id, hours||0, req.id);
+      const pts = lim.exceeded ? (pointsRules['penalty_permission_over']??-8) : (pointsRules['permission_within']??3);
+      await DB.from('requests').update({status:'approved',points_awarded:pts}).eq('id',req.id);
+      await incrementUserPoints(currentUser.id, pts, 0);
+      showAlert('submit-alert','تم تسجيل الاستئذان'+( lim.exceeded?' — تجاوزت الحد الشهري (−8 نقاط)':' (+3 نقاط)'),'success');
+      clearSubmitForm(); await loadMyRequests(); return;
+    }
+
+    const links = await advanceCoverageFlow(req);
+    showAlert('submit-alert','تم تقديم الطلب بنجاح ✅','success');
+    if (links?.waLink||links?.emailLink) showNotifLinksModal(links);
+    clearSubmitForm(); await loadMyRequests();
+  } catch(e) { showAlert('submit-alert','خطأ: '+e.message,'error');
+  } finally { btn.disabled=false; sp.classList.add('hidden'); }
+}
+
+function determineInitialStatus(type,subtype) {
+  if (type==='regular'&&subtype==='scheduled')    return 'pending_manager';
+  if (type==='sick'&&subtype==='before_shift')    return 'pending_manager';
+  if (type==='sick'&&subtype==='after_shift')     return 'suspended';
+  if (type==='permission')                        return 'approved';
+  return 'pending_cover1';
+}
+
+// ═══════════════════════════════════════════════
+//  COVERAGE FLOW
+// ═══════════════════════════════════════════════
+async function advanceCoverageFlow(request) {
+  const { status, cover1_id, cover2_id } = request;
+  if (status==='suspended')       return buildAndStoreNotif(request, request.employee_id, 'sick_suspended');
+  if (status==='pending_manager') { const mid=await getManagerId(); return buildAndStoreNotif(request,mid,'pending_manager_review',false); }
+  if (status==='pending_cover1'&&cover1_id) return buildAndStoreNotif(request, cover1_id, 'cover_request_1');
+  if (status==='pending_cover1'&&!cover1_id) {
+    await DB.from('requests').update({status:'pending_manager'}).eq('id',request.id);
+    const mid=await getManagerId(); return buildAndStoreNotif(request,mid,'pending_manager_review',true);
+  }
+  return null;
+}
+
+async function respondToCover(requestId, position, response) {
+  const { data:req } = await DB.from('requests').select('*').eq('id',requestId).single();
+  if (!req) return;
+  const field = position==='cover1'?'cover1_response':'cover2_response';
+  await DB.from('requests').update({[field]:response}).eq('id',requestId);
+
+  let links=null;
+  if (response==='accepted') {
+    const coverId = position==='cover1'?req.cover1_id:req.cover2_id;
+    const isDouble = await detectDoubleCoverage({...req,assigned_cover_id:coverId});
+    await DB.from('requests').update({status:'pending_manager',assigned_cover_id:coverId,is_double_coverage:isDouble}).eq('id',requestId);
+    const mid=await getManagerId();
+    links = await buildAndStoreNotif({...req,assigned_cover_id:coverId},mid,'pending_manager_review',false);
+    await buildAndStoreNotif(req,req.employee_id,'cover_accepted');
+  } else {
+    if (position==='cover1') {
+      if (req.cover2_id) {
+        await DB.from('requests').update({status:'pending_cover2'}).eq('id',requestId);
+        links = await buildAndStoreNotif(req,req.cover2_id,'cover_request_2');
+      } else {
+        await DB.from('requests').update({status:'pending_manager'}).eq('id',requestId);
+        const mid=await getManagerId(); links=await buildAndStoreNotif(req,mid,'pending_manager_review',true);
+      }
+    } else {
+      await DB.from('requests').update({status:'pending_manager'}).eq('id',requestId);
+      const mid=await getManagerId(); links=await buildAndStoreNotif(req,mid,'pending_manager_review',true);
+    }
+  }
+  if (links) showNotifLinksModal(links);
+  const alertId = document.getElementById('cover-inbox-alert') ? 'cover-inbox-alert' : 'submit-alert';
+  showAlert(alertId, response==='accepted'?'تم قبول التغطية ✅':'تم رفض التغطية', response==='accepted'?'success':'info');
+  await loadCoverInbox();
+}
+
+async function detectDoubleCoverage(request) {
+  const cid=request.assigned_cover_id;
+  if (!cid||!request.start_date) return false;
+  const { data } = await DB.from('requests').select('id').eq('assigned_cover_id',cid).eq('status','approved')
+    .lte('start_date',request.start_date).gte('end_date',request.start_date);
+  return !!(data&&data.length>0);
+}
+
+async function getManagerId() {
+  const mgr = allUsers.find(u=>u.role==='manager'&&u.is_active);
+  return mgr?mgr.id:null;
+}
+
+// ═══════════════════════════════════════════════
+//  10-DAY SICK WINDOW
+// ═══════════════════════════════════════════════
+async function checkSuspendedRequests() {
+  const today = new Date().toISOString().split('T')[0];
+  const { data:overdue } = await DB.from('requests').select('*').eq('status','suspended').lt('suspension_deadline',today);
+  for (const req of (overdue||[])) {
+    await DB.from('requests').update({status:'pending_manager'}).eq('id',req.id);
+    const mid=await getManagerId();
+    if (mid) await buildAndStoreNotif(req,mid,'sick_escalated',false);
+  }
+}
+
+async function submitMedicalReport(requestId) {
+  const pts = pointsRules['sick_resolved_10days']??2;
+  await DB.from('requests').update({medical_report_submitted:true,status:'pending_manager',points_awarded:pts}).eq('id',requestId);
+  await incrementUserPoints(currentUser.id,pts,0);
+  showAlert('my-req-alert','تم رفع التقرير الطبي — الطلب منقول للمدير ✅','success');
+  await loadMyRequests();
+}
+
+async function convertToRegular(requestId) {
+  if (!confirm('هل تريد تحويل الإجازة المرضية لاعتيادية؟ سيُطبَّق خصم 5 نقاط.')) return;
+  const pts = pointsRules['penalty_sick_to_regular']??-5;
+  await DB.from('requests').update({type:'regular',subtype:'unscheduled',status:'pending_cover1',suspension_deadline:null,points_awarded:pts}).eq('id',requestId);
+  await incrementUserPoints(currentUser.id,pts,0);
+  const { data:req } = await DB.from('requests').select('*').eq('id',requestId).single();
+  if (req) await advanceCoverageFlow(req);
+  showAlert('my-req-alert','تم تحويل الطلب لاعتيادية — الطلب منقول لمسار التغطية','info');
+  await loadMyRequests();
+}
+
+// ═══════════════════════════════════════════════
+//  POINTS
+// ═══════════════════════════════════════════════
+async function awardPointsImmediate(req) {
+  const pts = getCommitmentPts(req);
+  if (pts!==0) await incrementUserPoints(req.employee_id,pts,0);
+  await DB.from('requests').update({points_awarded:pts}).eq('id',req.id);
+}
+
+function getCommitmentPts(req) {
+  const P=pointsRules; const {type,subtype,assigned_cover_id}=req;
+  if (type==='regular'&&subtype==='scheduled')   return P['regular_scheduled']??5;
+  if (type==='regular'&&subtype==='unscheduled') return P['regular_unscheduled']??3;
+  if (type==='emergency'&&subtype==='call_sick') return P['emergency_call_sick']??2;
+  if (type==='emergency'&&subtype==='general')   return assigned_cover_id?(P['emergency_general']??0):(P['penalty_no_cover']??-10);
+  if (type==='sick'&&subtype==='before_shift')   return P['sick_before_shift']??3;
+  return 0;
+}
+
+function getCoveragePts(req) {
+  const P=pointsRules;
+  if (!req.assigned_cover_id) return 0;
+  if (req.is_double_coverage) return P['coverage_double']??20;
+  if (req.cover1_response==='rejected'&&req.cover2_response==='rejected') return P['coverage_forced']??15;
+  if (req.cover1_response==='rejected') return P['coverage_after_conflict']??12;
+  return P['coverage_normal']??10;
+}
+
+async function finalizeApproval(requestId) {
+  const { data:req } = await DB.from('requests').select('*').eq('id',requestId).single();
+  if (!req) return;
+
+  let pts = req.points_awarded;
+  if (pts===null||pts===undefined) {
+    pts = getCommitmentPts(req);
+    // For sick leave with medical report already submitted
+    if (req.type==='sick'&&req.medical_report_submitted) pts=pointsRules['sick_resolved_10days']??2;
+    // For sick leave without medical report (edge case)
+    if (req.type==='sick'&&!req.medical_report_submitted&&req.subtype!=='before_shift') pts=pointsRules['penalty_sick_to_regular']??-5;
+  }
+
+  await DB.from('requests').update({status:'approved',manager_id:currentUser.id,manager_decision:'approved',points_awarded:pts}).eq('id',requestId);
+  await incrementUserPoints(req.employee_id,pts,0);
+
+  if (req.assigned_cover_id) {
+    const cPts = getCoveragePts(req);
+    const cDays = req.is_double_coverage?2:1;
+    await incrementUserPoints(req.assigned_cover_id,0,cPts,cDays);
+  }
+
+  // Increment call_sick_count if applicable
+  if (req.type==='emergency'&&req.subtype==='call_sick') {
+    const emp=getUserById(req.employee_id);
+    if (emp) {
+      await DB.from('users').update({call_sick_count:(emp.call_sick_count||0)+1}).eq('id',req.employee_id);
+      Object.assign(emp,{call_sick_count:(emp.call_sick_count||0)+1});
+    }
+  }
+
+  await buildAndStoreNotif({...req,points_awarded:pts},req.employee_id,'request_approved');
+  if (req.assigned_cover_id) await buildAndStoreNotif(req,req.assigned_cover_id,'cover_confirmed');
+
+  await loadAllUsers();
+  await loadManagerApprovals();
+  showAlert('manager-alert','تم اعتماد الطلب ✅','success');
+}
+
+async function rejectRequest(requestId) {
+  if (!confirm('هل تريد رفض هذا الطلب؟')) return;
+  await DB.from('requests').update({status:'rejected',manager_id:currentUser.id,manager_decision:'rejected',points_awarded:0}).eq('id',requestId);
+  const { data:req } = await DB.from('requests').select('*').eq('id',requestId).single();
+  if (req) await buildAndStoreNotif(req,req.employee_id,'request_rejected');
+  await loadManagerApprovals();
+  showAlert('manager-alert','تم رفض الطلب','info');
+}
+
+async function checkPermissionLimit(empId, hours, excludeId) {
+  const start = new Date(); start.setDate(1);
+  const { data } = await DB.from('requests').select('hours').eq('employee_id',empId).eq('type','permission')
+    .gte('created_at',start.toISOString()).neq('id',excludeId||'00000000-0000-0000-0000-000000000000');
+  const count = (data||[]).length;
+  const totalH = (data||[]).reduce((s,r)=>s+(r.hours||0),0)+hours;
+  return { exceeded: count>=4||totalH>9 };
+}
+
+async function incrementUserPoints(userId, cPts, covPts, covDays=0) {
+  const u = allUsers.find(x=>x.id===userId); if (!u) return;
+  const upd={};
+  if (cPts!==0)   upd.commitment_points=(u.commitment_points||100)+cPts;
+  if (covPts!==0) upd.coverage_points  =(u.coverage_points||0)+covPts;
+  if (covDays>0)  upd.coverage_days    =(u.coverage_days||0)+covDays;
+  if (Object.keys(upd).length) { await DB.from('users').update(upd).eq('id',userId); Object.assign(u,upd); }
+}
+
+// ═══════════════════════════════════════════════
+//  NOTIFICATIONS
+// ═══════════════════════════════════════════════
+const NOTIF_MSG = {
+  cover_request_1:       (r,e)    => `🔔 طلب تغطية: ${e.full_name} يطلب تغطية ${fmtDate(r.start_date)} (${TYPE_LABELS[r.type]||r.type}). يرجى الرد في النظام.`,
+  cover_request_2:       (r,e)    => `🔔 طلب تغطية (المغطي الأول رفض): ${e.full_name} — ${fmtDate(r.start_date)}. يرجى الرد.`,
+  cover_accepted:        (r,_)    => `✅ وافق المغطي على طلبك بتاريخ ${fmtDate(r.start_date)} — الطلب عند المدير.`,
+  pending_manager_review:(r,e,f)  => `📋 ${f?'(رُفضت التغطية — ':'('}طلب ${e.full_name}) بتاريخ ${fmtDate(r.start_date)} يحتاج موافقتك.`,
+  request_approved:      (r,_)    => `✅ اعتُمد طلبك بتاريخ ${fmtDate(r.start_date)}. النقاط: ${(r.points_awarded??0)>=0?'+':''}${r.points_awarded??0}`,
+  request_rejected:      (r,_)    => `❌ رُفض طلبك بتاريخ ${fmtDate(r.start_date)}.`,
+  cover_confirmed:       (r,e)    => `📅 تأكيد: أنت مغطٍّ لـ${e.full_name} بتاريخ ${fmtDate(r.start_date)}.`,
+  sick_suspended:        (r,_)    => `⏳ طلبك المرضي معلق — لديك حتى ${fmtDate(r.suspension_deadline)} لرفع التقرير أو التحويل.`,
+  sick_escalated:        (r,e)    => `⚠️ ${e.full_name} تجاوز مهلة الـ10 أيام للمرضية — يرجى المراجعة.`,
+};
+const NOTIF_LABEL = {cover_request_1:'طلب تغطية',cover_request_2:'طلب تغطية (رفض الأول)',cover_accepted:'المغطي قبل',pending_manager_review:'بانتظار الموافقة',request_approved:'تمت الموافقة',request_rejected:'رُفض الطلب',cover_confirmed:'تأكيد التغطية',sick_suspended:'مرضية معلقة',sick_escalated:'تجاوز مهلة مرضية'};
+
+async function buildAndStoreNotif(request, recipientId, eventType, forced=false) {
+  if (!recipientId) return null;
+  const emp = getUserById(request.employee_id)||{full_name:'—'};
+  const rec = getUserById(recipientId)||{};
+  const fn  = NOTIF_MSG[eventType];
+  const msg = fn ? fn(request,emp,forced) : eventType;
+  const wa  = rec.phone    ? `https://wa.me/${rec.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}` : null;
+  const em  = rec.email    ? `mailto:${rec.email}?subject=${encodeURIComponent('إشعار من نظام الإجازات')}&body=${encodeURIComponent(msg)}` : null;
+  await DB.from('notifications').insert({request_id:request.id,recipient_id:recipientId,event_type:eventType,whatsapp_link:wa,email_link:em,is_read:false});
+  return {waLink:wa,emailLink:em,msg,recipientName:rec.full_name||'—'};
+}
+
+async function refreshNotifBadge() {
+  if (!currentUser) return;
+  const { data } = await DB.from('notifications').select('id',{count:'exact'}).eq('recipient_id',currentUser.id).eq('is_read',false);
+  const n = data?.length||0;
+  const badge=document.getElementById('notif-count');
+  if (n>0) { badge.textContent=n; badge.classList.remove('hidden'); } else badge.classList.add('hidden');
+}
+
+async function loadNotifPanel() {
+  const { data } = await DB.from('notifications').select('*').eq('recipient_id',currentUser.id).order('created_at',{ascending:false}).limit(20);
+  const el = document.getElementById('notif-list');
+  if (!(data||[]).length) { el.innerHTML='<div class="empty-state" style="padding:1rem">لا توجد إشعارات</div>'; return; }
+  // Mark all as read
+  await DB.from('notifications').update({is_read:true}).eq('recipient_id',currentUser.id).eq('is_read',false);
+  document.getElementById('notif-count').classList.add('hidden');
+  el.innerHTML = data.map(n=>`
+    <div class="notif-item">
+      <div style="color:#334155;font-weight:600">${esc(NOTIF_LABEL[n.event_type]||n.event_type)}</div>
+      <div style="color:#94a3b8;font-size:.73rem;margin:.1rem 0">${fmtDT(n.created_at)}</div>
+      <div class="notif-links">
+        ${n.whatsapp_link?`<a href="${n.whatsapp_link}" target="_blank" class="nl-wa">💬 واتساب</a>`:''}
+        ${n.email_link?`<a href="${n.email_link}" target="_blank" class="nl-email">📧 إيميل</a>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function toggleNotifPanel() {
+  const p=document.getElementById('notif-panel');
+  const hidden=p.classList.toggle('hidden');
+  if (!hidden) loadNotifPanel();
+}
+
+function showNotifLinksModal(links) {
+  if (!links||(!(links.waLink)&&!(links.emailLink))) return;
+  document.getElementById('notif-links-content').innerHTML=`
+    <div style="background:#f8fafc;border-radius:9px;padding:.85rem;font-size:.85rem;color:#334155;margin-bottom:1rem;line-height:1.6">${esc(links.msg||'')}</div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      ${links.waLink?`<a href="${links.waLink}" target="_blank" class="btn btn-success" style="text-decoration:none">💬 واتساب — ${esc(links.recipientName||'')}</a>`:''}
+      ${links.emailLink?`<a href="${links.emailLink}" target="_blank" class="btn btn-secondary" style="text-decoration:none">📧 إيميل</a>`:''}
+    </div>`;
+  document.getElementById('modal-notif-links').classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: Employee Dashboard
+// ═══════════════════════════════════════════════
+async function loadEmpDashboard() {
+  const { data:u } = await DB.from('users').select('*').eq('id',currentUser.id).single();
+  if (u) { currentUser=u; const idx=allUsers.findIndex(x=>x.id===u.id); if(idx>-1) allUsers[idx]=u; }
+  const total=(currentUser.commitment_points||100)+(currentUser.coverage_points||0);
+  const rank=getRankInfo(total);
+  document.getElementById('emp-dash-hero').innerHTML=`
+    <div class="points-hero">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+        <div>
+          <div style="font-size:.82rem;opacity:.7">إجمالي النقاط</div>
+          <div class="pts-total">${total}</div>
+          <div class="rank-hero">${rank.icon} ${rank.label}</div>
+        </div>
+        <div style="font-size:.78rem;opacity:.65;text-align:left">${rank.next}</div>
+      </div>
+      <div class="pts-row">
+        <div class="pts-item"><div class="pi-num">${currentUser.commitment_points||100}</div><div class="pi-lbl">التزام</div></div>
+        <div class="pts-item"><div class="pi-num">${currentUser.coverage_points||0}</div><div class="pi-lbl">تغطية</div></div>
+        <div class="pts-item"><div class="pi-num">${currentUser.coverage_days||0}</div><div class="pi-lbl">أيام تغطية</div></div>
+        <div class="pts-item"><div class="pi-num">${3-(currentUser.call_sick_count||0)}</div><div class="pi-lbl">هاتفية متبقية</div></div>
+      </div>
+    </div>`;
+
+  // Pending cover requests for this employee
+  const { data:covReqs } = await DB.from('requests')
+    .select('*, employee:employee_id(full_name)')
+    .or(`and(cover1_id.eq.${currentUser.id},status.eq.pending_cover1),and(cover2_id.eq.${currentUser.id},status.eq.pending_cover2)`);
+  const hasCov=!!(covReqs&&covReqs.length);
+  document.getElementById('emp-pending-cover').classList.toggle('hidden',!hasCov);
+  if (hasCov) document.getElementById('emp-cover-cards').innerHTML=covReqs.map(r=>{
+    const pos=r.status==='pending_cover1'?'cover1':'cover2';
+    return `<div style="background:#fff;border-radius:10px;padding:.85rem;margin-bottom:.6rem;border:1px solid #fed7aa">
+      <div style="font-weight:700">${esc(r.employee?.full_name||'—')}</div>
+      <div style="font-size:.83rem;color:#64748b">${TYPE_LABELS[r.type]||r.type} — ${fmtDate(r.start_date)}</div>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem">
+        <button class="btn btn-success btn-sm" onclick="respondToCover('${r.id}','${pos}','accepted')">✅ قبول</button>
+        <button class="btn btn-danger btn-sm" onclick="respondToCover('${r.id}','${pos}','rejected')">❌ رفض</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const { data:reqs } = await DB.from('requests').select('*').eq('employee_id',currentUser.id).order('created_at',{ascending:false}).limit(5);
+  document.getElementById('emp-recent-requests').innerHTML=(reqs&&reqs.length)?buildReqTable(reqs,false):'<div class="empty-state">لا توجد طلبات بعد</div>';
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: My Requests
+// ═══════════════════════════════════════════════
+async function loadMyRequests() {
+  const { data } = await DB.from('requests').select('*').eq('employee_id',currentUser.id).order('created_at',{ascending:false});
+  document.getElementById('my-requests-list').innerHTML=(data&&data.length)?buildReqTable(data,true):'<div class="empty-state">لا توجد طلبات بعد</div>';
+}
+
+function buildReqTable(reqs, showActions) {
+  return `<table><thead><tr><th>النوع</th><th>التاريخ</th><th>الحالة</th><th>النقاط</th>${showActions?'<th>إجراء</th>':''}</tr></thead><tbody>`
+    +reqs.map(r=>{
+      const act=showActions&&r.status==='suspended'?
+        `<button class="btn btn-sm btn-primary" onclick="submitMedicalReport('${r.id}')">رفع تقرير</button>
+         <button class="btn btn-sm btn-amber" style="margin-top:.2rem" onclick="convertToRegular('${r.id}')">تحويل لاعتيادية</button>`:'—';
+      return `<tr>
+        <td>${TYPE_LABELS[r.type]||r.type}${r.subtype?` <small style="color:#64748b">(${SUBTYPE_LABELS[r.subtype]||r.subtype})</small>`:''}</td>
+        <td>${fmtDate(r.start_date)}${r.hours?` — ${r.hours}س`:''}</td>
+        <td><span class="badge ${STATUS_BADGE[r.status]||'badge-gray'}">${STATUS_LABELS[r.status]||r.status}</span>${r.status==='suspended'&&r.suspension_deadline?`<div style="font-size:.7rem;color:#92400e">حتى ${fmtDate(r.suspension_deadline)}</div>`:''}</td>
+        <td>${r.points_awarded!=null?`<b style="color:${r.points_awarded>=0?'#15803d':'#b91c1c'}">${r.points_awarded>=0?'+':''}${r.points_awarded}</b>`:'—'}</td>
+        ${showActions?`<td style="white-space:nowrap">${act}</td>`:''}
+      </tr>`;
+    }).join('')+'</tbody></table>';
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: My Points
+// ═══════════════════════════════════════════════
+async function loadMyPoints() {
+  const { data:u } = await DB.from('users').select('*').eq('id',currentUser.id).single();
+  if (u) currentUser=u;
+  const total=(currentUser.commitment_points||100)+(currentUser.coverage_points||0);
+  const rank=getRankInfo(total);
+  document.getElementById('my-points-hero').innerHTML=`
+    <div class="points-hero">
+      <div class="pts-total">${total} نقطة</div>
+      <div class="rank-hero">${rank.icon} ${rank.label}</div>
+      <div class="pts-row">
+        <div class="pts-item"><div class="pi-num">${currentUser.commitment_points||100}</div><div class="pi-lbl">نقاط الالتزام</div></div>
+        <div class="pts-item"><div class="pi-num">${currentUser.coverage_points||0}</div><div class="pi-lbl">نقاط التغطية</div></div>
+        <div class="pts-item"><div class="pi-num">${currentUser.coverage_days||0}</div><div class="pi-lbl">أيام التغطية</div></div>
+      </div>
+      <div style="margin-top:.75rem;font-size:.8rem;opacity:.7">${rank.next}</div>
+    </div>`;
+  const { data } = await DB.from('requests').select('*').eq('employee_id',currentUser.id).not('points_awarded','is',null).order('created_at',{ascending:false});
+  const el=document.getElementById('my-points-history');
+  el.innerHTML=(data&&data.length)?
+    `<table><thead><tr><th>النوع</th><th>التاريخ</th><th>النقاط</th></tr></thead><tbody>`
+    +data.map(r=>`<tr><td>${TYPE_LABELS[r.type]||r.type}</td><td>${fmtDate(r.created_at)}</td><td style="font-weight:700;color:${r.points_awarded>=0?'#15803d':'#b91c1c'}">${r.points_awarded>=0?'+':''}${r.points_awarded}</td></tr>`).join('')
+    +'</tbody></table>'
+    :'<div class="empty-state">لا توجد سجلات بعد</div>';
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: Cover Inbox
+// ═══════════════════════════════════════════════
+async function loadCoverInbox() {
+  const { data } = await DB.from('requests')
+    .select('*, employee:employee_id(full_name,title)')
+    .or(`and(cover1_id.eq.${currentUser.id},status.eq.pending_cover1),and(cover2_id.eq.${currentUser.id},status.eq.pending_cover2)`)
+    .order('created_at',{ascending:false});
+  const el=document.getElementById('cover-inbox-list');
+  if (!(data&&data.length)) { el.innerHTML='<div class="empty-state">لا توجد طلبات تغطية معلقة ✅</div>'; return; }
+  el.innerHTML=data.map(r=>{
+    const pos=r.status==='pending_cover1'?'cover1':'cover2';
+    return `<div class="card" style="border-color:#fed7aa;margin-bottom:.75rem">
+      <div style="font-weight:700;font-size:1rem">${esc(r.employee?.full_name||'—')}</div>
+      <div style="font-size:.85rem;color:#64748b;margin:.2rem 0">${TYPE_LABELS[r.type]||r.type}${r.subtype?' — '+(SUBTYPE_LABELS[r.subtype]||r.subtype):''}</div>
+      <div style="font-size:.85rem">📅 ${fmtDate(r.start_date)}${r.end_date&&r.end_date!==r.start_date?' ← '+fmtDate(r.end_date):''}</div>
+      ${r.notes?`<div style="font-size:.82rem;color:#64748b;margin-top:.2rem">${esc(r.notes)}</div>`:''}
+      <div style="font-size:.8rem;color:#0f766e;margin:.35rem 0">النقاط عند القبول: +${pointsRules['coverage_normal']??10}</div>
+      <div class="actions" style="margin-top:.65rem;margin-bottom:0">
+        <button class="btn btn-success" onclick="respondToCover('${r.id}','${pos}','accepted')">✅ قبول</button>
+        <button class="btn btn-danger" onclick="respondToCover('${r.id}','${pos}','rejected')">❌ رفض</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: Coordinator Dashboard
+// ═══════════════════════════════════════════════
+async function loadCoordDashboard() {
+  const { data:all } = await DB.from('requests').select('*, employee:employee_id(full_name)').order('created_at',{ascending:false});
+  const r=all||[];
+  const cnt={ pending:r.filter(x=>['pending_cover1','pending_cover2','pending_manager'].includes(x.status)).length, suspended:r.filter(x=>x.status==='suspended').length, approved:r.filter(x=>x.status==='approved').length, rejected:r.filter(x=>x.status==='rejected').length };
+  document.getElementById('coord-stats').innerHTML=`
+    <div class="stat-card sc-amber"><div class="num">${cnt.pending}</div><div class="lbl">معلقة</div></div>
+    <div class="stat-card sc-purple"><div class="num">${cnt.suspended}</div><div class="lbl">مرضية معلقة</div></div>
+    <div class="stat-card sc-green"><div class="num">${cnt.approved}</div><div class="lbl">معتمدة</div></div>
+    <div class="stat-card sc-red"><div class="num">${cnt.rejected}</div><div class="lbl">مرفوضة</div></div>`;
+  const today=new Date();
+  const urgent=r.filter(x=>{
+    if(x.status!=='suspended'||!x.suspension_deadline)return false;
+    const d=Math.ceil((new Date(x.suspension_deadline)-today)/86400000);
+    return d>=0&&d<=3;
+  });
+  document.getElementById('coord-urgent-list').innerHTML=urgent.length
+    ?urgent.map(x=>`<div class="urgent-card"><b style="color:#9a3412">${esc(x.employee?.full_name||'—')}</b> — مرضية معلقة، الموعد النهائي: ${fmtDate(x.suspension_deadline)} (${Math.ceil((new Date(x.suspension_deadline)-today)/86400000)} يوم)</div>`).join('')
+    :'<div class="empty-state" style="padding:.75rem">لا توجد حالات عاجلة ✅</div>';
+  document.getElementById('coord-recent').innerHTML=r.slice(0,10).length
+    ?`<table><thead><tr><th>الموظف</th><th>النوع</th><th>الحالة</th><th>التاريخ</th></tr></thead><tbody>`
+      +r.slice(0,10).map(x=>`<tr><td>${esc(x.employee?.full_name||'—')}</td><td>${TYPE_LABELS[x.type]||x.type}</td><td><span class="badge ${STATUS_BADGE[x.status]||'badge-gray'}">${STATUS_LABELS[x.status]||x.status}</span></td><td>${fmtDT(x.created_at)}</td></tr>`).join('')+'</tbody></table>'
+    :'<div class="empty-state">لا توجد نشاطات</div>';
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: All Requests
+// ═══════════════════════════════════════════════
+async function loadAllRequests() {
+  const sf=document.getElementById('filter-status')?.value||'';
+  const tf=document.getElementById('filter-type')?.value||'';
+  const mf=document.getElementById('filter-month')?.value||'';
+  let q=DB.from('requests').select('*, employee:employee_id(full_name), cover:assigned_cover_id(full_name)').order('created_at',{ascending:false});
+  if (sf) q=q.eq('status',sf);
+  if (tf) q=q.eq('type',tf);
+  if (mf) { const [y,m]=mf.split('-'); q=q.gte('created_at',`${y}-${m}-01`).lt('created_at',`${y}-${String(parseInt(m)%12+1).padStart(2,'0')}-01`); }
+  const { data } = await q;
+  const el=document.getElementById('all-requests-list');
+  if (!(data&&data.length)) { el.innerHTML='<div class="empty-state">لا توجد طلبات مطابقة</div>'; return; }
+  el.innerHTML=`<table><thead><tr><th>الموظف</th><th>النوع</th><th>التاريخ</th><th>المغطي</th><th>الحالة</th><th>النقاط</th></tr></thead><tbody>`
+    +data.map(r=>`<tr><td style="font-weight:600">${esc(r.employee?.full_name||'—')}</td><td>${TYPE_LABELS[r.type]||r.type}</td><td>${fmtDate(r.start_date)}${r.hours?` — ${r.hours}س`:''}</td><td>${esc(r.cover?.full_name||'—')}</td><td><span class="badge ${STATUS_BADGE[r.status]||'badge-gray'}">${STATUS_LABELS[r.status]||r.status}</span></td><td>${r.points_awarded!=null?`<b style="color:${r.points_awarded>=0?'#15803d':'#b91c1c'}">${r.points_awarded>=0?'+':''}${r.points_awarded}</b>`:'—'}</td></tr>`).join('')
+    +'</tbody></table>';
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: Manager Approvals
+// ═══════════════════════════════════════════════
+async function loadManagerApprovals() {
+  await checkSuspendedRequests();
+  const { data:pend } = await DB.from('requests').select('*, employee:employee_id(full_name,phone), cover:assigned_cover_id(full_name)').eq('status','pending_manager').order('created_at',{ascending:false});
+  const pel=document.getElementById('manager-approvals-list');
+  pel.innerHTML=(pend&&pend.length)?pend.map(r=>`
+    <div class="card" style="border-color:#93c5fd;margin-bottom:.75rem">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.5rem">
+        <div>
+          <div style="font-weight:700;font-size:1rem">${esc(r.employee?.full_name||'—')}</div>
+          <div style="font-size:.84rem;color:#64748b">${TYPE_LABELS[r.type]||r.type}${r.subtype?' — '+(SUBTYPE_LABELS[r.subtype]||r.subtype):''}</div>
+          <div style="font-size:.84rem;margin:.25rem 0">📅 ${fmtDate(r.start_date)}${r.end_date&&r.end_date!==r.start_date?' ← '+fmtDate(r.end_date):''}${r.hours?' | '+r.hours+' ساعة':''}</div>
+          ${r.notes?`<div style="font-size:.82rem;color:#64748b">${esc(r.notes)}</div>`:''}
+        </div>
+        <span class="badge badge-blue">انتظار المدير</span>
+      </div>
+      <div style="margin:.6rem 0;padding:.55rem .75rem;background:#f8fafc;border-radius:8px;font-size:.84rem">
+        ${r.cover?.full_name
+          ?`👤 المغطي: <b>${esc(r.cover.full_name)}</b>${r.is_double_coverage?' <span class="badge badge-purple">مزدوجة 🔁</span>':''}`
+          :`<span style="color:#b45309">⚠️ لا يوجد مغطٍّ — يجب تعيين بديل أولاً</span>`}
+      </div>
+      ${r.medical_report_submitted?`<div style="font-size:.82rem;color:#15803d;margin-bottom:.4rem">✅ تقرير طبي مرفوع</div>`:''}
+      <div class="actions" style="margin-bottom:0">
+        <button class="btn btn-success" onclick="finalizeApproval('${r.id}')">✅ اعتماد</button>
+        <button class="btn btn-danger" onclick="rejectRequest('${r.id}')">❌ رفض</button>
+        ${!r.cover?.full_name?`<button class="btn btn-amber" onclick="openAssignCoverModal('${r.id}')">👤 تعيين مغطٍّ</button>`:''}
+      </div>
+    </div>`).join('')
+  :'<div class="empty-state">لا توجد طلبات تحتاج موافقة ✅</div>';
+
+  const { data:all } = await DB.from('requests').select('*, employee:employee_id(full_name), cover:assigned_cover_id(full_name)').order('created_at',{ascending:false}).limit(30);
+  document.getElementById('manager-all-list').innerHTML=(all&&all.length)?
+    `<table><thead><tr><th>الموظف</th><th>النوع</th><th>التاريخ</th><th>المغطي</th><th>الحالة</th></tr></thead><tbody>`
+    +all.map(r=>`<tr><td>${esc(r.employee?.full_name||'—')}</td><td>${TYPE_LABELS[r.type]||r.type}</td><td>${fmtDate(r.start_date)}</td><td>${esc(r.cover?.full_name||'—')}</td><td><span class="badge ${STATUS_BADGE[r.status]||'badge-gray'}">${STATUS_LABELS[r.status]||r.status}</span></td></tr>`).join('')
+    +'</tbody></table>'
+  :'<div class="empty-state">لا توجد طلبات</div>';
+}
+
+function openAssignCoverModal(requestId) {
+  document.getElementById('assign-cover-req-id').value=requestId;
+  const sel=document.getElementById('assign-cover-select');
+  sel.innerHTML='<option value="">— اختر الموظف —</option>';
+  allUsers.filter(u=>u.is_active).forEach(u=>{
+    const o=document.createElement('option'); o.value=u.id; o.textContent=u.full_name+(u.title?' — '+u.title:''); sel.appendChild(o);
+  });
+  document.getElementById('modal-assign-cover').classList.remove('hidden');
+}
+
+async function confirmAssignCover() {
+  const reqId=document.getElementById('assign-cover-req-id').value;
+  const covId=document.getElementById('assign-cover-select').value;
+  if (!covId) { showAlert('assign-cover-alert','يرجى اختيار موظف','error'); return; }
+  const { data:req } = await DB.from('requests').select('*').eq('id',reqId).single();
+  const isDouble = await detectDoubleCoverage({...req,assigned_cover_id:covId});
+  await DB.from('requests').update({assigned_cover_id:covId,is_double_coverage:isDouble}).eq('id',reqId);
+  const links = await buildAndStoreNotif({...req,assigned_cover_id:covId},covId,'cover_confirmed');
+  closeModal('modal-assign-cover');
+  if (links) showNotifLinksModal(links);
+  await loadManagerApprovals();
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: GM Dashboard
+// ═══════════════════════════════════════════════
+async function loadGMDashboard() {
+  await loadAllUsers();
+  const active=allUsers.filter(u=>u.is_active);
+  const ranked=active.map(u=>({...u,total:(u.commitment_points||100)+(u.coverage_points||0)})).sort((a,b)=>b.total-a.total);
+  document.getElementById('gm-stats').innerHTML=`
+    <div class="stat-card sc-teal"><div class="num">${active.length}</div><div class="lbl">موظفون نشطون</div></div>
+    <div class="stat-card sc-green"><div class="num">${ranked.filter(u=>u.total>=130).length}</div><div class="lbl">مميز 🥇</div></div>
+    <div class="stat-card sc-blue"><div class="num">${ranked.filter(u=>u.total>=110&&u.total<130).length}</div><div class="lbl">ملتزم 🥈</div></div>
+    <div class="stat-card sc-red"><div class="num">${ranked.filter(u=>u.total<70).length}</div><div class="lbl">حرج 🔴</div></div>`;
+  document.getElementById('gm-ranking-list').innerHTML=ranked.length?ranked.map((u,i)=>{
+    const rank=getRankInfo(u.total);
+    const nc=i===0?'rn-1':i===1?'rn-2':i===2?'rn-3':'rn-other';
+    return `<div class="rank-row">
+      <div class="rank-num ${nc}">${i+1}</div>
+      <div style="flex:1">
+        <div style="font-weight:700">${esc(u.full_name)} ${u.title?`<span class="badge badge-gray" style="font-size:.7rem">${esc(u.title)}</span>`:''}</div>
+        <div style="font-size:.77rem;color:#64748b">التزام: ${u.commitment_points||100} | تغطية: ${u.coverage_points||0} | أيام: ${u.coverage_days||0}</div>
+      </div>
+      <div style="text-align:center;min-width:90px">
+        <div style="font-size:1.4rem;font-weight:800;color:#0f766e">${u.total}</div>
+        <div style="font-size:.75rem">${rank.icon} ${rank.label}</div>
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty-state">لا يوجد موظفون</div>';
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: GM Employee Management
+// ═══════════════════════════════════════════════
+async function loadGMEmployees() {
+  await loadAllUsers();
+  document.getElementById('gm-emp-list').innerHTML=allUsers.length?
+    `<table><thead><tr><th>الاسم</th><th>الصلاحية</th><th>المسمى</th><th>النقاط الكلية</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody>`
+    +allUsers.map(u=>`<tr>
+      <td style="font-weight:600">${esc(u.full_name)}</td>
+      <td><span class="badge badge-blue">${ROLE_LABELS[u.role]||u.role}</span></td>
+      <td>${esc(u.title||'—')}</td>
+      <td>${(u.commitment_points||100)+(u.coverage_points||0)}</td>
+      <td><span class="badge ${u.is_active?'badge-green':'badge-red'}">${u.is_active?'نشط':'موقوف'}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-outline btn-sm" onclick="openEditEmployeeModal('${u.id}')">تعديل</button>
+        <button class="btn btn-${u.is_active?'danger':'success'} btn-sm" style="margin-right:.25rem" onclick="toggleEmployeeActive('${u.id}',${!u.is_active})">${u.is_active?'إيقاف':'تفعيل'}</button>
+      </td>
+    </tr>`).join('')+'</tbody></table>'
+  :'<div class="empty-state">لا يوجد موظفون</div>';
+}
+
+function openAddEmployeeModal() {
+  document.getElementById('emp-edit-id').value='';
+  document.getElementById('modal-emp-title').textContent='➕ إضافة موظف';
+  ['emp-fullname','emp-title-f','emp-username','emp-password','emp-phone','emp-email'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('emp-role').value='employee';
+  document.getElementById('emp-active').value='true';
+  populateEmpCoverSelects();
+  document.getElementById('modal-emp').classList.remove('hidden');
+}
+
+function openEditEmployeeModal(uid) {
+  const u=getUserById(uid); if(!u)return;
+  document.getElementById('emp-edit-id').value=u.id;
+  document.getElementById('modal-emp-title').textContent='✏️ تعديل بيانات الموظف';
+  document.getElementById('emp-fullname').value=u.full_name||'';
+  document.getElementById('emp-title-f').value=u.title||'';
+  document.getElementById('emp-username').value=u.username||'';
+  document.getElementById('emp-password').value='';
+  document.getElementById('emp-phone').value=u.phone||'';
+  document.getElementById('emp-email').value=u.email||'';
+  document.getElementById('emp-role').value=u.role||'employee';
+  document.getElementById('emp-active').value=String(u.is_active);
+  populateEmpCoverSelects(u.default_cover1_id,u.default_cover2_id);
+  document.getElementById('modal-emp').classList.remove('hidden');
+}
+
+function populateEmpCoverSelects(c1='',c2='') {
+  const opts='<option value="">— لا يوجد —</option>'+allUsers.map(u=>`<option value="${u.id}">${esc(u.full_name)}</option>`).join('');
+  document.getElementById('emp-cover1-default').innerHTML=opts;
+  document.getElementById('emp-cover2-default').innerHTML=opts;
+  if(c1) document.getElementById('emp-cover1-default').value=c1;
+  if(c2) document.getElementById('emp-cover2-default').value=c2;
+}
+
+async function saveEmployee() {
+  const editId=document.getElementById('emp-edit-id').value;
+  const fn=document.getElementById('emp-fullname').value.trim();
+  const un=document.getElementById('emp-username').value.trim();
+  const pw=document.getElementById('emp-password').value;
+  if (!fn) { showAlert('modal-emp-alert','يرجى إدخال الاسم الكامل','error'); return; }
+  if (!editId&&!un) { showAlert('modal-emp-alert','يرجى إدخال اسم المستخدم','error'); return; }
+  if (!editId&&!pw) { showAlert('modal-emp-alert','يرجى إدخال كلمة المرور','error'); return; }
+  const payload={
+    full_name:fn, title:document.getElementById('emp-title-f').value.trim()||null,
+    phone:document.getElementById('emp-phone').value.trim()||null, email:document.getElementById('emp-email').value.trim()||null,
+    role:document.getElementById('emp-role').value, is_active:document.getElementById('emp-active').value==='true',
+    default_cover1_id:document.getElementById('emp-cover1-default').value||null,
+    default_cover2_id:document.getElementById('emp-cover2-default').value||null,
+  };
+  if (!editId) payload.username=un;
+  if (pw) payload.password_hash=await sha256(pw);
+  const { error } = editId
+    ? await DB.from('users').update(payload).eq('id',editId)
+    : await DB.from('users').insert(payload);
+  if (error) { showAlert('modal-emp-alert','خطأ: '+error.message,'error'); return; }
+  closeModal('modal-emp');
+  showAlert('gm-emp-alert',editId?'تم تحديث البيانات ✅':'تم إضافة الموظف ✅','success');
+  await loadGMEmployees();
+}
+
+async function toggleEmployeeActive(uid, newVal) {
+  await DB.from('users').update({is_active:newVal}).eq('id',uid);
+  await loadGMEmployees();
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: Settings
+// ═══════════════════════════════════════════════
+async function loadSettings() {
+  const { data } = await DB.from('points_rules').select('*').order('points',{ascending:false});
+  document.getElementById('settings-rules-list').innerHTML=(data&&data.length)?
+    `<table><thead><tr><th>المعيار</th><th>النقاط</th><th></th></tr></thead><tbody>`
+    +data.map(r=>`<tr><td>${esc(r.label_ar)}</td><td><input type="number" id="rule-${r.id}" value="${r.points}" style="width:80px;padding:.3rem .5rem;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.9rem;text-align:center"/></td><td><button class="btn btn-primary btn-sm" onclick="saveRule('${r.id}','${r.rule_key}')">حفظ</button></td></tr>`).join('')
+    +'</tbody></table>'
+  :'<div class="empty-state">لا توجد قواعد</div>';
+}
+
+async function saveRule(rid, rkey) {
+  const v=parseInt(document.getElementById('rule-'+rid).value);
+  if (isNaN(v)) { showAlert('settings-alert','قيمة غير صحيحة','error'); return; }
+  await DB.from('points_rules').update({points:v}).eq('id',rid);
+  pointsRules[rkey]=v;
+  showAlert('settings-alert','تم الحفظ ✅','success');
+}
+
+async function runYearEndBonus() {
+  const bonus=pointsRules['bonus_no_call_sick_year']??15;
+  const eligible=allUsers.filter(u=>u.is_active&&(u.call_sick_count||0)===0);
+  for (const u of eligible) await incrementUserPoints(u.id,bonus,0);
+  document.getElementById('year-end-result').innerHTML=eligible.length
+    ?`<div class="alert alert-success">✅ تم منح +${bonus} نقطة لـ ${eligible.length} موظف: ${eligible.map(u=>esc(u.full_name)).join('، ')}</div>`
+    :`<div class="alert alert-info">لا يوجد موظفون مؤهلون</div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════
+function getRankInfo(t) {
+  if (t>=130) return {label:'مميز',     icon:'🥇',next:'نهاية السلّم — أداء استثنائي'};
+  if (t>=110) return {label:'ملتزم',    icon:'🥈',next:`${130-t} نقطة للـ مميز`};
+  if (t>=90)  return {label:'مقبول',    icon:'✅', next:`${110-t} نقطة للـ ملتزم`};
+  if (t>=70)  return {label:'يحتاج تحسيناً',icon:'⚠️',next:`${90-t} نقطة للـ مقبول`};
+  return {label:'حرج',icon:'🔴',next:`${70-t} نقطة للخروج من الحرج`};
+}
+
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function closeModalIfBg(e,id) { if(e.target===e.currentTarget) closeModal(id); }
+
+function showAlert(id, msg, type='success') {
+  const el=document.getElementById(id); if(!el)return;
+  el.innerHTML=`<div class="alert alert-${type}">${esc(msg)}</div>`;
+  if (type==='success') setTimeout(()=>{el.innerHTML='';},5000);
+}
+function showLoginAlert(msg) {
+  document.getElementById('login-alert').innerHTML=`<div class="alert alert-error" style="margin-bottom:1rem">${esc(msg)}</div>`;
+}
+
+// Enter on login password
+document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+// Close notif panel on outside click
+document.addEventListener('click',e=>{
+  const panel=document.getElementById('notif-panel');
+  const btn=document.getElementById('notif-btn');
+  if(!panel.classList.contains('hidden')&&!panel.contains(e.target)&&!btn.contains(e.target))
+    panel.classList.add('hidden');
+});
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+(async()=>{
+  if (SUPABASE_URL.includes('YOUR_PROJECT')) {
+    document.getElementById('login-alert').innerHTML=
+      '<div class="alert alert-warn" style="margin-bottom:1rem">⚙️ يرجى تحديث SUPABASE_URL و SUPABASE_ANON في ملف index.html قبل الاستخدام.</div>';
+    return;
+  }
+  await restoreSession();
+})();
+</script>
+</body>
+</html>
